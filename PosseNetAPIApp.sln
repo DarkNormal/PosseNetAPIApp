@@ -1,0 +1,39 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PosseNetAPIApp", "PosseNetAPIApp\PosseNetAPIApp.csproj", "{73326CA8-9F71-4758-BB4C-C4B1536967B7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PublishScripts", "PublishScripts", "{318E5F44-B877-4246-8CE5-6DEEC0D8098A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{16E3755F-8A2B-4ACA-8F81-91D6227F4D44}"
+	ProjectSection(SolutionItems) = preProject
+		PublishScripts\Scripts\Deploy-AzureResourceGroup.ps1 = PublishScripts\Scripts\Deploy-AzureResourceGroup.ps1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Templates", "Templates", "{F26D47B7-0AEF-4092-9DC3-4A54DD8721EF}"
+	ProjectSection(SolutionItems) = preProject
+		PublishScripts\Templates\PosseNetAPIApp.json = PublishScripts\Templates\PosseNetAPIApp.json
+		PublishScripts\Templates\PosseNetAPIApp.param.dev.json = PublishScripts\Templates\PosseNetAPIApp.param.dev.json
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{73326CA8-9F71-4758-BB4C-C4B1536967B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73326CA8-9F71-4758-BB4C-C4B1536967B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73326CA8-9F71-4758-BB4C-C4B1536967B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73326CA8-9F71-4758-BB4C-C4B1536967B7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{16E3755F-8A2B-4ACA-8F81-91D6227F4D44} = {318E5F44-B877-4246-8CE5-6DEEC0D8098A}
+		{F26D47B7-0AEF-4092-9DC3-4A54DD8721EF} = {318E5F44-B877-4246-8CE5-6DEEC0D8098A}
+	EndGlobalSection
+EndGlobal
