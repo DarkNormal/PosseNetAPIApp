@@ -245,6 +245,10 @@
     <Compile Include="Migrations\201511021102207_Initial.Designer.cs">
       <DependentUpon>201511021102207_Initial.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\201511030830226_registermodel.cs" />
+    <Compile Include="Migrations\201511030830226_registermodel.Designer.cs">
+      <DependentUpon>201511030830226_registermodel.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountBindingModels.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
@@ -287,6 +291,8 @@
     <Content Include="Areas\HelpPage\Views\Help\DisplayTemplates\CollectionModelDescription.cshtml" />
     <Content Include="Areas\HelpPage\Views\Help\DisplayTemplates\ApiGroup.cshtml" />
     <Content Include="Areas\HelpPage\Views\Help\Api.cshtml" />
+    <None Include="Properties\PublishProfiles\PosseNetAPIApp - FTP.pubxml" />
+    <None Include="Properties\PublishProfiles\PosseNetAPIApp - Web Deploy.pubxml" />
     <None Include="Properties\PublishProfiles\PosseNetAPIApp.pubxml" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
@@ -327,6 +333,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Migrations\201511021102207_Initial.resx">
       <DependentUpon>201511021102207_Initial.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201511030830226_registermodel.resx">
+      <DependentUpon>201511030830226_registermodel.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

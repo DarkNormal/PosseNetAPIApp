@@ -328,7 +328,7 @@ namespace PosseNetAPIApp.Controllers
                 return BadRequest(ModelState);
             }
 
-            var user = new ApplicationUser() { UserName = model.Email, Email = model.Email };
+            var user = new ApplicationUser() { UserName = model.Username, Email = model.Email };
 
             IdentityResult result = await UserManager.CreateAsync(user, model.Password);
 
@@ -337,7 +337,7 @@ namespace PosseNetAPIApp.Controllers
                 return GetErrorResult(result);
             }
 
-            return Ok();
+            return Ok("user registered");
         }
 
         // POST api/Account/RegisterExternal
