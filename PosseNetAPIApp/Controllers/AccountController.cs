@@ -62,7 +62,7 @@ namespace PosseNetAPIApp.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return Request.CreateResponse(HttpStatusCode.BadRequest, model);            //mode state is invlaid
+                return Request.CreateResponse(HttpStatusCode.BadRequest, "invalid data entered");            //mode state is invlaid
             }
             if (model.Username.Contains("@"))                                               //if the username contains the @ symbol, prevented at registration to prevent confusion
             {
@@ -83,7 +83,7 @@ namespace PosseNetAPIApp.Controllers
                 else
                 {
                    
-                    return Request.CreateResponse(HttpStatusCode.BadRequest, model);            //user not found
+                    return Request.CreateResponse(HttpStatusCode.BadRequest, "An account with that username / email and/or password was not recognised");            //user not found
                 }
             }
             else
