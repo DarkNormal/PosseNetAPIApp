@@ -16,6 +16,9 @@ using Microsoft.Owin.Security.OAuth;
 using PosseNetAPIApp.Models;
 using PosseNetAPIApp.Providers;
 using PosseNetAPIApp.Results;
+using System.Net;
+using System.Linq;
+using Microsoft.Owin.Testing;
 
 namespace PosseNetAPIApp.Controllers
 {
@@ -25,6 +28,7 @@ namespace PosseNetAPIApp.Controllers
     {
         private const string LocalLoginProvider = "Local";
         private ApplicationUserManager _userManager;
+        private ApplicationDbContext db = new ApplicationDbContext();
 
         public AccountController()
         {
@@ -47,6 +51,54 @@ namespace PosseNetAPIApp.Controllers
             {
                 _userManager = value;
             }
+        }
+
+        //to be used for any validation of users existing, primarily for initial check before /Token to recieve username if email provided
+        // POST api/Account/CheckAccoutExist
+        [HttpPost]
+        [AllowAnonymous]
+        [Route("TokenLogin")]
+        public async Task<HttpResponseMessage> LoginUser(UserAccountBindingModel model)     //username and password, can also be email
+        {
+            if (!ModelState.IsValid)
+            {
+                return Request.CreateResponse(HttpStatusCode.BadRequest, model);            //mode state is invlaid
+            }
+            if (model.Username.Contains("@"))                                               //if the username contains the @ symbol, prevented at registration to prevent confusion
+            {
+                var user = await UserManager.FindByEmailAsync(model.Username);              //find the user by email first
+                if (user != null)                                                           //if success, then perform password check
+                {
+                    bool passwordCheck = await UserManager.CheckPasswordAsync(user, model.Password);    
+                    if (passwordCheck)
+                    {
+                        model.Username = user.UserName;                                         //if password also matches, set the model username (in this case its an email) to the associated username
+                        return Request.CreateResponse(HttpStatusCode.OK, model);                //return the model back to the client (with username)
+                    }
+                    else
+                    {
+                        return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "incorrect username/ email and/or password");
+                    }
+                }
+                else
+                {
+                   
+                    return Request.CreateResponse(HttpStatusCode.BadRequest, model);            //user not found
+                }
+            }
+            else
+            {
+                var checkUser = await UserManager.FindAsync(model.Username, model.Password);    //finds users based on username and password
+                if (checkUser != null)
+                {
+                    return Request.CreateResponse(HttpStatusCode.OK, model);                    //found user, return model as it satisfies the requirements
+                }
+                else
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "An account with that username / email and/or password was not recognised");
+                }
+            }
+
         }
 
         public ISecureDataFormat<AuthenticationTicket> AccessTokenFormat { get; private set; }
@@ -321,11 +373,11 @@ namespace PosseNetAPIApp.Controllers
         // POST api/Account/Register
         [AllowAnonymous]
         [Route("Register")]
-        public async Task<IHttpActionResult> Register(RegisterBindingModel model)
+        public async Task<HttpResponseMessage> Register(RegisterBindingModel model)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return Request.CreateResponse(HttpStatusCode.BadRequest, ModelState);
             }
 
             var user = new ApplicationUser() { UserName = model.Username, Email = model.Email };
@@ -334,10 +386,10 @@ namespace PosseNetAPIApp.Controllers
 
             if (!result.Succeeded)
             {
-                return GetErrorResult(result);
+                return Request.CreateResponse(HttpStatusCode.BadRequest, result);
             }
 
-            return Ok("user registered");
+            return Request.CreateResponse(HttpStatusCode.OK , model);
         }
 
         // POST api/Account/RegisterExternal

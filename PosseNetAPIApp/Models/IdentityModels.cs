@@ -33,5 +33,6 @@ namespace PosseNetAPIApp.Models
         public System.Data.Entity.DbSet<PosseNetAPIApp.Models.Event> Events { get; set; }
 
         public System.Data.Entity.DbSet<PosseNetAPIApp.Models.AppUser> AppUsers { get; set; }
+
     }
 }

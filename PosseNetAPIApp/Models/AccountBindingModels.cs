@@ -80,4 +80,15 @@ namespace PosseNetAPIApp.Models
         [Compare("NewPassword", ErrorMessage = "The new password and confirmation password do not match.")]
         public string ConfirmPassword { get; set; }
     }
+    public class UserAccountBindingModel
+    {
+        [Required]
+        [Display(Name = "username")]
+        public string Username { get; set; }
+
+        [Required]
+        [Display(Name = "password")]
+        public string Password { get; set; }
+    }
+
 }

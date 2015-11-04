@@ -10,6 +10,7 @@ using System.Web.Http;
 using System.Web.Http.Description;
 using PosseNetAPIApp.Models;
 using System.Threading.Tasks;
+using Microsoft.Owin.Testing;
 
 namespace PosseNetAPIApp.Controllers
 {
@@ -22,6 +23,7 @@ namespace PosseNetAPIApp.Controllers
         {
             return db.AppUsers;
         }
+        
 
         // GET: api/AppUsers/5
         [ResponseType(typeof(AppUser))]
