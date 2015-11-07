@@ -260,6 +260,10 @@
     <Compile Include="Migrations\201511040000300_tokenAuth.Designer.cs">
       <DependentUpon>201511040000300_tokenAuth.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\201511071825015_unknown-pending.cs" />
+    <Compile Include="Migrations\201511071825015_unknown-pending.Designer.cs">
+      <DependentUpon>201511071825015_unknown-pending.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountBindingModels.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
@@ -350,6 +354,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201511040000300_tokenAuth.resx">
       <DependentUpon>201511040000300_tokenAuth.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201511071825015_unknown-pending.resx">
+      <DependentUpon>201511071825015_unknown-pending.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>
