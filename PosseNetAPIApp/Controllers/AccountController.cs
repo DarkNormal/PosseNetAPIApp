@@ -62,7 +62,7 @@ namespace PosseNetAPIApp.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return Request.CreateResponse(HttpStatusCode.BadRequest, "Invalid data entered");            //mode state is invlaid
+                return Request.CreateResponse(HttpStatusCode.PreconditionFailed, "Invalid data entered");            //mode state is invlaid
             }
             if (model.Username.Contains("@"))                                               //if the username contains the @ symbol, prevented at registration to prevent confusion
             {
@@ -77,13 +77,13 @@ namespace PosseNetAPIApp.Controllers
                     }
                     else
                     {
-                        return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Account with that email/username pasword combo not found");
+                        return Request.CreateErrorResponse(HttpStatusCode.PreconditionFailed, "Account with that email/username pasword combo not found");
                     }
                 }
                 else
                 {
                    
-                    return Request.CreateResponse(HttpStatusCode.BadRequest, "Account with that email/username pasword combo not found");            //user not found
+                    return Request.CreateResponse(HttpStatusCode.PreconditionFailed, "Account with that email/username pasword combo not found");            //user not found
                 }
             }
             else
@@ -95,7 +95,7 @@ namespace PosseNetAPIApp.Controllers
                 }
                 else
                 {
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Account with that email/username pasword combo not found");
+                    return Request.CreateErrorResponse(HttpStatusCode.PreconditionFailed, "Account with that email/username pasword combo not found");
                 }
             }
 
@@ -316,7 +316,7 @@ namespace PosseNetAPIApp.Controllers
                 ClaimsIdentity cookieIdentity = await user.GenerateUserIdentityAsync(UserManager,
                     CookieAuthenticationDefaults.AuthenticationType);
 
-                AuthenticationProperties properties = ApplicationOAuthProvider.CreateProperties(user.UserName);
+                AuthenticationProperties properties = ApplicationOAuthProvider.CreateProperties(user.UserName, user.Email);
                 Authentication.SignIn(properties, oAuthIdentity, cookieIdentity);
             }
             else
