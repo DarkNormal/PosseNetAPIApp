@@ -17,9 +17,9 @@ namespace PosseNetAPIApp.Controllers
         private ApplicationDbContext db = new ApplicationDbContext();
 
         // GET: api/Events
-        public IQueryable<Event> GetEvents()
+        public IEnumerable<Event> GetEvents()
         {
-            return db.Events;
+            return db.Events.ToList();
         }
 
         // GET: api/Events/5

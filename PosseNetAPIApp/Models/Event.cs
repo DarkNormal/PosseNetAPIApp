@@ -18,5 +18,8 @@ namespace PosseNetAPIApp.Models
         [Required(ErrorMessage = "Event host is required")]
         public string EventHost { get; set; }
 
+        public double EventLocationLat { get; set; }
+        public double EventLocationLng { get; set; }
+
     }
 }
