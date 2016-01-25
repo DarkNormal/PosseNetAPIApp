@@ -248,26 +248,6 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\201511021102207_Initial.cs" />
-    <Compile Include="Migrations\201511021102207_Initial.Designer.cs">
-      <DependentUpon>201511021102207_Initial.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\201511030830226_registermodel.cs" />
-    <Compile Include="Migrations\201511030830226_registermodel.Designer.cs">
-      <DependentUpon>201511030830226_registermodel.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\201511040000300_tokenAuth.cs" />
-    <Compile Include="Migrations\201511040000300_tokenAuth.Designer.cs">
-      <DependentUpon>201511040000300_tokenAuth.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\201511071825015_unknown-pending.cs" />
-    <Compile Include="Migrations\201511071825015_unknown-pending.Designer.cs">
-      <DependentUpon>201511071825015_unknown-pending.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\201512151334541_addLocation.cs" />
-    <Compile Include="Migrations\201512151334541_addLocation.Designer.cs">
-      <DependentUpon>201512151334541_addLocation.cs</DependentUpon>
-    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountBindingModels.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
@@ -311,7 +291,6 @@
     <Content Include="Areas\HelpPage\Views\Help\Api.cshtml" />
     <None Include="Properties\PublishProfiles\PosseNetAPIApp - FTP.pubxml" />
     <None Include="Properties\PublishProfiles\PosseNetAPIApp - Web Deploy.pubxml" />
-    <None Include="Properties\PublishProfiles\PosseNetAPIApp.pubxml" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
@@ -348,23 +327,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Project_Readme.html" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Migrations\201511021102207_Initial.resx">
-      <DependentUpon>201511021102207_Initial.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\201511030830226_registermodel.resx">
-      <DependentUpon>201511030830226_registermodel.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\201511040000300_tokenAuth.resx">
-      <DependentUpon>201511040000300_tokenAuth.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\201511071825015_unknown-pending.resx">
-      <DependentUpon>201511071825015_unknown-pending.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\201512151334541_addLocation.resx">
-      <DependentUpon>201512151334541_addLocation.cs</DependentUpon>
-    </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

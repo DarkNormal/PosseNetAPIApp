@@ -21,5 +21,8 @@ namespace PosseNetAPIApp.Models
         public double EventLocationLat { get; set; }
         public double EventLocationLng { get; set; }
 
+        public DateTime EventStartTime { get; set; }
+        public DateTime EventEndTime { get; set; }
+
     }
 }
