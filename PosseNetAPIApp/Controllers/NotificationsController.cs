@@ -38,7 +38,7 @@ namespace PosseNetAPIApp.Controllers
                 case "gcm":
                     // Android
                     var notif = "{ \"data\" : {\"message\":\"" + "From " + user + ": " + message + "\"}}";
-                    outcome = await Notifications.Instance.Hub.SendGcmNativeNotificationAsync(notif, "mark.lordan@root.com");
+                    outcome = await Notifications.Instance.Hub.SendGcmNativeNotificationAsync(notif, to_tag);
                     break;
             }
 

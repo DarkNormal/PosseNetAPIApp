@@ -11,20 +11,14 @@ using System.Web.Http.Description;
 using PosseNetAPIApp.Models;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
+using System.Threading.Tasks;
 
 namespace PosseNetAPIApp.Controllers
 {
+    [RoutePrefix("api/FriendRequests")]
     public class FriendRelationshipsController : ApiController
     {
         private ApplicationDbContext db = new ApplicationDbContext();
-
-
-
-        //// GET: api/FriendRelationships
-        //public IQueryable<FriendRelationships> GetFriendRelationships()
-        //{
-        //    return db.FriendRelationships;
-        //}
 
         // GET: api/FriendRelationships/5
         [ResponseType(typeof(List<FriendRelationships>))]
@@ -34,7 +28,7 @@ namespace PosseNetAPIApp.Controllers
             var fromList = db.FriendRelationships.Where(x => x.FromUsername == username).ToList(); //get connections where username is in the From Column
             var toList = db.FriendRelationships.Where(x => x.ToUsername == username).ToList();      //get connections where username is in the To Column
             List<FriendRelationships> friendRelationships = new List<FriendRelationships>();
-            foreach(FriendRelationships friendship in fromList)         //foreach over both lists and add them to the main return list
+            foreach (FriendRelationships friendship in fromList)         //foreach over both lists and add them to the main return list
             {
                 friendRelationships.Add(friendship);
             }
@@ -86,32 +80,51 @@ namespace PosseNetAPIApp.Controllers
         }
 
         // POST: api/FriendRelationships
+        //Add a friend relationship between two registered users
         [ResponseType(typeof(FriendRelationships))]
-        public IHttpActionResult PostFriendRelationships(FriendRelationships friendRelationships)
+        [Route("AddFriend")]
+        public async Task<IHttpActionResult> AddFriend(FriendRelationships friendRelationships)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-            else {
+            else
+            {
+                //always set accepted to false - confirmation pending from other user
+                friendRelationships.HasAccepted = false;
+
+                //check that the username the request is coming from exists
                 var checkFromUser = db.Users.FirstOrDefault(x => x.UserName == friendRelationships.FromUsername);
                 if (checkFromUser != null)
                 {
+                    //check that the username the request is for exists
                     var checkToUser = db.Users.FirstOrDefault(x => x.UserName == friendRelationships.ToUsername);
                     if (checkToUser != null)
                     {
-                        //var alreadyAddedFriend1 = db.FriendRelationships.Where(x => x.FromUsername == friendRelationships.FromUsername).ToList();
-                        //var alreadyAddedFriend2 = db.FriendRelationships.FirstOrDefault(x => x.ToUsername == friendRelationships.ToUsername);
-                        //var alreadyAddedFriend3 = db.FriendRelationships.FirstOrDefault(x => x.FromUsername == friendRelationships.ToUsername);
-                        //var alreadyAddedFriend4 = db.FriendRelationships.FirstOrDefault(x => x.ToUsername == friendRelationships.FromUsername);
+                        //check for any matching relationship already present (could be reversed so that is also checked)
+                        var existingRelationship = db.FriendRelationships.Where(x => (x.FromUsername.Equals(friendRelationships.FromUsername) && x.ToUsername.Equals(friendRelationships.ToUsername)) ||
+                        (x.ToUsername.Equals(friendRelationships.FromUsername) && x.FromUsername.Equals(friendRelationships.ToUsername))).ToList();
+
+                        if (existingRelationship.Count > 0)
+                        {
+                            //existing relationship between the two users exists
+                            return BadRequest("A relationship already exists between these users");
+                        }
+                        else {
+                            //else add the relationship to the database
                             db.FriendRelationships.Add(friendRelationships);
                             db.SaveChanges();
-                            return CreatedAtRoute("DefaultApi", new { id = friendRelationships.FriendRelationshipsID }, friendRelationships);
-                        }                   
-                    }
+                            //send a push notification to the requested user's device
+                            await PostNotification("gcm", "friend request", checkFromUser.Email, checkToUser.Email);
 
+                            return Ok("Friend Request sent");
+                        }
+                    }
+                    return BadRequest("Incorrect To or From Username");
                 }
-            return BadRequest(ModelState);
+                return BadRequest("Incorrect To or From Username");
+            }
         }
 
         // DELETE: api/FriendRelationships/5
@@ -142,6 +155,48 @@ namespace PosseNetAPIApp.Controllers
         private bool FriendRelationshipsExists(int id)
         {
             return db.FriendRelationships.Count(e => e.FriendRelationshipsID == id) > 0;
+        }
+
+        private async Task<HttpResponseMessage> PostNotification(string pns, [FromBody]string message, string from_tag, string to_tag)
+        {
+            var user = from_tag;
+            string[] userTag = new string[2];
+            userTag[0] = "username:" + to_tag;
+            userTag[1] = "from:" + user;
+
+            Microsoft.Azure.NotificationHubs.NotificationOutcome outcome = null;
+            HttpStatusCode ret = HttpStatusCode.InternalServerError;
+
+            switch (pns.ToLower())
+            {
+                //case "wns":
+                //    // Windows 8.1 / Windows Phone 8.1
+                //    var toast = @"<toast><visual><binding template=""ToastText01""><text id=""1"">" +
+                //                "From " + user + ": " + message + "</text></binding></visual></toast>";
+                //    outcome = await Notifications.Instance.Hub.SendWindowsNativeNotificationAsync(toast, userTag);
+                //    break;
+                //case "apns":
+                //    // iOS
+                //    var alert = "{\"aps\":{\"alert\":\"" + "From " + user + ": " + message + "\"}}";
+                //    outcome = await Notifications.Instance.Hub.SendAppleNativeNotificationAsync(alert, userTag);
+                //    break;
+                case "gcm":
+                    // Android
+                    var notif = "{ \"data\" : {\"message\":\"" + "From " + user + ": " + message + "\"}}";
+                    outcome = await Notifications.Instance.Hub.SendGcmNativeNotificationAsync(notif, to_tag);
+                    break;
+            }
+
+            if (outcome != null)
+            {
+                if (!((outcome.State == Microsoft.Azure.NotificationHubs.NotificationOutcomeState.Abandoned) ||
+                    (outcome.State == Microsoft.Azure.NotificationHubs.NotificationOutcomeState.Unknown)))
+                {
+                    ret = HttpStatusCode.OK;
+                }
+            }
+
+            return Request.CreateResponse(ret);
         }
     }
 }
