@@ -20,28 +20,26 @@ namespace PosseNetAPIApp.Controllers
     {
         private ApplicationDbContext db = new ApplicationDbContext();
 
-        // GET: api/FriendRelationships/5
-        [ResponseType(typeof(List<FriendRelationships>))]
-        public IHttpActionResult GetFriendRelationships(string username)
+        public List<String> GetFriendRelationships(string username)
         {
 
             var fromList = db.FriendRelationships.Where(x => x.FromUsername == username).ToList(); //get connections where username is in the From Column
             var toList = db.FriendRelationships.Where(x => x.ToUsername == username).ToList();      //get connections where username is in the To Column
-            List<FriendRelationships> friendRelationships = new List<FriendRelationships>();
+            List<String> friendRelationships = new List<String>();
             foreach (FriendRelationships friendship in fromList)         //foreach over both lists and add them to the main return list
             {
-                friendRelationships.Add(friendship);
+                friendRelationships.Add(friendship.ToUsername);
             }
             foreach (FriendRelationships friendship in toList)
             {
-                friendRelationships.Add(friendship);
+                friendRelationships.Add(friendship.FromUsername);
             }
             if (friendRelationships == null)
             {
-                return NotFound();
+                return null;
             }
 
-            return Ok(friendRelationships);
+            return friendRelationships;
         }
 
         // PUT: api/FriendRelationships/5

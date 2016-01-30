@@ -53,6 +53,37 @@ namespace PosseNetAPIApp.Controllers
             }
         }
 
+        //Not pretty code - need to figure out a more elegant way of doing this
+        [AllowAnonymous]
+        [HttpGet]
+        [Route("GetUsersFriendStatus")]
+        public IHttpActionResult GetUsers(string username)
+        {
+            //get friends of the supplied username
+            var friends = new FriendRelationshipsController().GetFriendRelationships(username);
+            //get all users except for the calling user
+            var users = db.Users.Where(x => x.UserName.Equals(username) == false).Select(x => x.UserName).ToList();
+            List<BasicFriendDetails> returnList = new List<BasicFriendDetails>();
+            foreach(string user in users)
+            {
+                //add all users to a list, set IsFriend to false by default
+                returnList.Add(new BasicFriendDetails(user, false));
+            }
+            foreach(BasicFriendDetails friend in returnList)
+            {
+                foreach(string addedFriend in friends)
+                {
+                    //if the name matches, change the IsFriend property to true
+                    if (friend.Username.Equals(addedFriend)){
+                        friend.IsFriend = true;
+                    }
+                }
+                
+            }
+           
+            return Ok(returnList);
+        }
+
         //to be used for any validation of users existing, primarily for initial check before /Token to recieve username if email provided
         // POST api/Account/CheckAccoutExist
         [HttpPost]
@@ -69,7 +100,7 @@ namespace PosseNetAPIApp.Controllers
                 var user = await UserManager.FindByEmailAsync(model.Username);              //find the user by email first
                 if (user != null)                                                           //if success, then perform password check
                 {
-                    bool passwordCheck = await UserManager.CheckPasswordAsync(user, model.Password);    
+                    bool passwordCheck = await UserManager.CheckPasswordAsync(user, model.Password);
                     if (passwordCheck)
                     {
                         model.Username = user.UserName;                                         //if password also matches, set the model username (in this case its an email) to the associated username
@@ -82,7 +113,7 @@ namespace PosseNetAPIApp.Controllers
                 }
                 else
                 {
-                   
+
                     return Request.CreateResponse(HttpStatusCode.PreconditionFailed, "Account with that email/username pasword combo not found");            //user not found
                 }
             }
@@ -177,7 +208,7 @@ namespace PosseNetAPIApp.Controllers
 
             IdentityResult result = await UserManager.ChangePasswordAsync(User.Identity.GetUserId(), model.OldPassword,
                 model.NewPassword);
-            
+
             if (!result.Succeeded)
             {
                 return GetErrorResult(result);
@@ -310,9 +341,9 @@ namespace PosseNetAPIApp.Controllers
             if (hasRegistered)
             {
                 Authentication.SignOut(DefaultAuthenticationTypes.ExternalCookie);
-                
-                 ClaimsIdentity oAuthIdentity = await user.GenerateUserIdentityAsync(UserManager,
-                    OAuthDefaults.AuthenticationType);
+
+                ClaimsIdentity oAuthIdentity = await user.GenerateUserIdentityAsync(UserManager,
+                   OAuthDefaults.AuthenticationType);
                 ClaimsIdentity cookieIdentity = await user.GenerateUserIdentityAsync(UserManager,
                     CookieAuthenticationDefaults.AuthenticationType);
 
@@ -389,7 +420,7 @@ namespace PosseNetAPIApp.Controllers
                 return Request.CreateResponse(HttpStatusCode.BadRequest, result);
             }
 
-            return Request.CreateResponse(HttpStatusCode.OK , model);
+            return Request.CreateResponse(HttpStatusCode.OK, model);
         }
 
         // POST api/Account/RegisterExternal
@@ -420,7 +451,7 @@ namespace PosseNetAPIApp.Controllers
             result = await UserManager.AddLoginAsync(user.Id, info.Login);
             if (!result.Succeeded)
             {
-                return GetErrorResult(result); 
+                return GetErrorResult(result);
             }
             return Ok();
         }

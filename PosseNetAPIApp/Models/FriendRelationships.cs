@@ -15,4 +15,15 @@ namespace PosseNetAPIApp.Models
 
         public bool HasAccepted { get; set; }
     }
+    public class BasicFriendDetails
+    {
+        public string Username { get; set; }
+        public bool IsFriend { get; set; }
+
+        public BasicFriendDetails(string username, bool isFriend)
+        {
+            Username = username;
+            IsFriend = isFriend;
+        }
+    }
 }
