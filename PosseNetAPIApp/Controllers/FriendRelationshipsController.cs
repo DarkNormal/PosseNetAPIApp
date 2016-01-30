@@ -20,26 +20,11 @@ namespace PosseNetAPIApp.Controllers
     {
         private ApplicationDbContext db = new ApplicationDbContext();
 
-        public List<String> GetFriendRelationships(string username)
+        public List<FriendRelationships> GetFriendRelationships(string username)
         {
 
-            var fromList = db.FriendRelationships.Where(x => x.FromUsername == username).ToList(); //get connections where username is in the From Column
-            var toList = db.FriendRelationships.Where(x => x.ToUsername == username).ToList();      //get connections where username is in the To Column
-            List<String> friendRelationships = new List<String>();
-            foreach (FriendRelationships friendship in fromList)         //foreach over both lists and add them to the main return list
-            {
-                friendRelationships.Add(friendship.ToUsername);
-            }
-            foreach (FriendRelationships friendship in toList)
-            {
-                friendRelationships.Add(friendship.FromUsername);
-            }
-            if (friendRelationships == null)
-            {
-                return null;
-            }
-
-            return friendRelationships;
+            var list = db.FriendRelationships.Where(x => x.FromUsername == username || x.ToUsername == username).ToList(); //get connections where username is in the From Column
+            return list;
         }
 
         // PUT: api/FriendRelationships/5
@@ -116,7 +101,7 @@ namespace PosseNetAPIApp.Controllers
                             //send a push notification to the requested user's device
                             await PostNotification("gcm", "friend request", checkFromUser.Email, checkToUser.Email);
 
-                            return Ok("Friend Request sent");
+                            return Json(new { success = true });
                         }
                     }
                     return BadRequest("Incorrect To or From Username");
@@ -130,6 +115,23 @@ namespace PosseNetAPIApp.Controllers
         public IHttpActionResult DeleteFriendRelationships(int id)
         {
             FriendRelationships friendRelationships = db.FriendRelationships.Find(id);
+            if (friendRelationships == null)
+            {
+                return NotFound();
+            }
+
+            db.FriendRelationships.Remove(friendRelationships);
+            db.SaveChanges();
+
+            return Ok(friendRelationships);
+        }
+
+        // DELETE: api/FriendRelationships/5
+        [ResponseType(typeof(FriendRelationships))]
+        public IHttpActionResult DeleteFriendRelationshipsByUsername(string username, string usernameOfFriend)
+        {
+            FriendRelationships friendRelationships = db.FriendRelationships.FirstOrDefault(x => x.FromUsername.Equals(username, StringComparison.OrdinalIgnoreCase) && x.ToUsername.Equals(usernameOfFriend, StringComparison.OrdinalIgnoreCase) ||
+                                                                                                 x.FromUsername.Equals(usernameOfFriend, StringComparison.OrdinalIgnoreCase) && x.ToUsername.Equals(username, StringComparison.OrdinalIgnoreCase));
             if (friendRelationships == null)
             {
                 return NotFound();

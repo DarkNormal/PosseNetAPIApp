@@ -71,10 +71,11 @@ namespace PosseNetAPIApp.Controllers
             }
             foreach(BasicFriendDetails friend in returnList)
             {
-                foreach(string addedFriend in friends)
+                foreach(FriendRelationships addedFriend in friends)
                 {
                     //if the name matches, change the IsFriend property to true
-                    if (friend.Username.Equals(addedFriend, StringComparison.OrdinalIgnoreCase)){
+                    if (friend.Username.Equals(addedFriend.ToUsername, StringComparison.OrdinalIgnoreCase) ||
+                        friend.Username.Equals(addedFriend.FromUsername, StringComparison.OrdinalIgnoreCase)){
                         friend.IsFriend = true;
                     }
                 }
