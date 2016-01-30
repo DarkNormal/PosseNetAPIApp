@@ -74,7 +74,7 @@ namespace PosseNetAPIApp.Controllers
                 foreach(string addedFriend in friends)
                 {
                     //if the name matches, change the IsFriend property to true
-                    if (friend.Username.Equals(addedFriend)){
+                    if (friend.Username.Equals(addedFriend, StringComparison.OrdinalIgnoreCase)){
                         friend.IsFriend = true;
                     }
                 }
