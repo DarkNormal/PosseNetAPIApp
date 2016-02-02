@@ -19,6 +19,7 @@ using PosseNetAPIApp.Results;
 using System.Net;
 using System.Linq;
 using Microsoft.Owin.Testing;
+using Newtonsoft.Json;
 
 namespace PosseNetAPIApp.Controllers
 {
@@ -64,26 +65,28 @@ namespace PosseNetAPIApp.Controllers
             //get all users except for the calling user
             var users = db.Users.Where(x => x.UserName.Equals(username) == false).Select(x => x.UserName).ToList();
             List<BasicFriendDetails> returnList = new List<BasicFriendDetails>();
-            foreach(string user in users)
+            foreach (string user in users)
             {
                 //add all users to a list, set IsFriend to false by default
                 returnList.Add(new BasicFriendDetails(user, false));
             }
-            foreach(BasicFriendDetails friend in returnList)
+            foreach (BasicFriendDetails friend in returnList)
             {
-                foreach(FriendRelationships addedFriend in friends)
+                foreach (FriendRelationships addedFriend in friends)
                 {
                     //if the name matches, change the IsFriend property to true
                     if (friend.Username.Equals(addedFriend.ToUsername, StringComparison.OrdinalIgnoreCase) ||
-                        friend.Username.Equals(addedFriend.FromUsername, StringComparison.OrdinalIgnoreCase)){
+                        friend.Username.Equals(addedFriend.FromUsername, StringComparison.OrdinalIgnoreCase))
+                    {
                         friend.IsFriend = true;
                     }
                 }
-                
+
             }
-           
+
             return Ok(returnList);
         }
+        
 
         //to be used for any validation of users existing, primarily for initial check before /Token to recieve username if email provided
         // POST api/Account/CheckAccoutExist
@@ -196,6 +199,40 @@ namespace PosseNetAPIApp.Controllers
                 Logins = logins,
                 ExternalLoginProviders = GetExternalLogins(returnUrl, generateState)
             };
+        }
+        //TODO remove allow anonymous
+        [HttpPost]
+        [AllowAnonymous]
+        [Route("ChangeUsername")]
+        public async Task<IHttpActionResult> ChangeUsername(RegisterBindingModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var existingUsername = db.Users.Where(x => x.UserName.Equals(model.Username, StringComparison.OrdinalIgnoreCase)).ToList(); //finds any users with existing username
+                if (existingUsername.Count < 1) //the chosen username doesn't exist
+                {
+                    var u = UserManager.FindByEmail(model.Email);       //finds the user details based on email
+                    if (u != null)    //if the email checks out with an existing user
+                    {
+                        bool passwordCheck = await UserManager.CheckPasswordAsync(u, model.Password);   //check the password is correct to the user
+                        if (passwordCheck)
+                        {
+                            u.UserName = model.Username;
+                            UserManager.Update(u);
+                            return Json(new { success = true });
+                        }
+                        return Json(new { success = false, cause = "Incorrect password supplied" });
+                    }
+                    return Json(new { success = false, cause = "User not found" });
+                }
+                return Json(new
+                {
+                    success = false,
+                    cause = "Username is already taken"
+                });
+            }
+            return BadRequest(ModelState);
+
         }
 
         // POST api/Account/ChangePassword
