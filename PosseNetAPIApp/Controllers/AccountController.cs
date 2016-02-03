@@ -86,7 +86,7 @@ namespace PosseNetAPIApp.Controllers
 
             return Ok(returnList);
         }
-        
+
 
         //to be used for any validation of users existing, primarily for initial check before /Token to recieve username if email provided
         // POST api/Account/CheckAccoutExist
@@ -237,22 +237,27 @@ namespace PosseNetAPIApp.Controllers
 
         // POST api/Account/ChangePassword
         [Route("ChangePassword")]
+        [AllowAnonymous]
         public async Task<IHttpActionResult> ChangePassword(ChangePasswordBindingModel model)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-
-            IdentityResult result = await UserManager.ChangePasswordAsync(User.Identity.GetUserId(), model.OldPassword,
-                model.NewPassword);
-
-            if (!result.Succeeded)
+            var u = UserManager.FindByEmail(model.Email);
+            if (u != null)
             {
-                return GetErrorResult(result);
-            }
+                IdentityResult result = await UserManager.ChangePasswordAsync(u.Id, model.OldPassword,
+                    model.NewPassword);
 
-            return Ok();
+                if (!result.Succeeded)
+                {
+                    return GetErrorResult(result);
+                }
+
+                return Ok();
+            }
+            return BadRequest();
         }
 
         // POST api/Account/SetPassword
