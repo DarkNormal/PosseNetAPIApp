@@ -252,12 +252,12 @@ namespace PosseNetAPIApp.Controllers
 
                 if (!result.Succeeded)
                 {
-                    return GetErrorResult(result);
+                    return Json(new { success = false, cause = "Invalid password provided" });
                 }
 
-                return Ok();
+                return Json(new { success = true});
             }
-            return BadRequest();
+            return Json(new { success = false, cause = "Invalid user / password provided" });
         }
 
         // POST api/Account/SetPassword
