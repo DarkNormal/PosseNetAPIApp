@@ -95,5 +95,20 @@ namespace PosseNetAPIApp.Models
         [Display(Name = "password")]
         public string Password { get; set; }
     }
+    public class UserBasicDetailsModel
+    {
+        public UserBasicDetailsModel(string username, string linkToImage)
+        {
+            Username = username;
+            ProfilePicture = linkToImage;
+        }
+        [Required]
+        [Key]
+        [Display(Name = "username")]
+        public string Username { get; set; }
+
+        [Display(Name = "profile picture")]
+        public string ProfilePicture { get; set; }
+    }
 
 }

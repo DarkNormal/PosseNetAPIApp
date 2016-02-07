@@ -31,7 +31,7 @@ namespace PosseNetAPIApp.Models
         }
 
         public System.Data.Entity.DbSet<PosseNetAPIApp.Models.Event> Events { get; set; }
-
+        public System.Data.Entity.DbSet<PosseNetAPIApp.Models.AttendingEvents> AttendingEvents { get; set; }
         public System.Data.Entity.DbSet<PosseNetAPIApp.Models.FriendRelationships> FriendRelationships { get; set; }
     }
 }
