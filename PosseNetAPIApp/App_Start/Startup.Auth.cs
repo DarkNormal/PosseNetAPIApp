@@ -55,9 +55,9 @@ namespace PosseNetAPIApp
             //    consumerKey: "",
             //    consumerSecret: "");
 
-            //app.UseFacebookAuthentication(
-            //    appId: "",
-            //    appSecret: "");
+            app.UseFacebookAuthentication(
+                appId: "1543886725935090",
+                appSecret: "63ab7a49e991177caf72e3ec8f2247cc");
 
             //app.UseGoogleAuthentication(new GoogleOAuth2AuthenticationOptions()
             //{

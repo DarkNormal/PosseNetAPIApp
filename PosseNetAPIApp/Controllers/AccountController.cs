@@ -390,7 +390,7 @@ namespace PosseNetAPIApp.Controllers
                 ClaimsIdentity cookieIdentity = await user.GenerateUserIdentityAsync(UserManager,
                     CookieAuthenticationDefaults.AuthenticationType);
 
-                AuthenticationProperties properties = ApplicationOAuthProvider.CreateProperties(user.UserName, user.Email);
+                AuthenticationProperties properties = ApplicationOAuthProvider.CreateProperties(user.UserName);
                 Authentication.SignIn(properties, oAuthIdentity, cookieIdentity);
             }
             else
