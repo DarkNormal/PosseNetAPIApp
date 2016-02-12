@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
+using System.Data.Entity;
 
 namespace PosseNetAPIApp.Models
 {
@@ -29,9 +30,9 @@ namespace PosseNetAPIApp.Models
         {
             return new ApplicationDbContext();
         }
-
-        public System.Data.Entity.DbSet<PosseNetAPIApp.Models.Event> Events { get; set; }
-        public System.Data.Entity.DbSet<PosseNetAPIApp.Models.AttendingEvents> AttendingEvents { get; set; }
-        public System.Data.Entity.DbSet<PosseNetAPIApp.Models.FriendRelationships> FriendRelationships { get; set; }
+        public IDbSet<IdentityUserLogin> UserLogins { get; set; }
+        public DbSet<Event> Events { get; set; }
+        public DbSet<AttendingEvents> AttendingEvents { get; set; }
+        public DbSet<FriendRelationships> FriendRelationships { get; set; }
     }
 }

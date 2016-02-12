@@ -10,12 +10,18 @@ using Microsoft.Owin.Security.OAuth;
 using Owin;
 using PosseNetAPIApp.Providers;
 using PosseNetAPIApp.Models;
+using Microsoft.Owin.Security.Facebook;
+using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace PosseNetAPIApp
 {
     public partial class Startup
     {
         public static OAuthAuthorizationServerOptions OAuthOptions { get; private set; }
+        public static OAuthBearerAuthenticationOptions OAuthBearerOptions { get; private set; }
+        public static GoogleOAuth2AuthenticationOptions googleAuthOptions { get; private set; }
+        public static FacebookAuthenticationOptions facebookAuthOptions { get; private set; }
 
         public static string PublicClientId { get; private set; }
 
@@ -42,28 +48,18 @@ namespace PosseNetAPIApp
                 // In production mode set AllowInsecureHttp = false
                 AllowInsecureHttp = true
             };
+            // Token Generation
+            app.UseOAuthAuthorizationServer(OAuthOptions);
+            OAuthBearerOptions = new OAuthBearerAuthenticationOptions();
+            app.UseOAuthBearerAuthentication(OAuthBearerOptions);
 
-            // Enable the application to use bearer tokens to authenticate users
-            app.UseOAuthBearerTokens(OAuthOptions);
-
-            // Uncomment the following lines to enable logging in with third party login providers
-            //app.UseMicrosoftAccountAuthentication(
-            //    clientId: "",
-            //    clientSecret: "");
-
-            //app.UseTwitterAuthentication(
-            //    consumerKey: "",
-            //    consumerSecret: "");
-
-            app.UseFacebookAuthentication(
-                appId: "1543886725935090",
-                appSecret: "63ab7a49e991177caf72e3ec8f2247cc");
-
-            //app.UseGoogleAuthentication(new GoogleOAuth2AuthenticationOptions()
-            //{
-            //    ClientId = "",
-            //    ClientSecret = ""
-            //});
+            facebookAuthOptions = new FacebookAuthenticationOptions
+            {
+                AppId = "1543886725935090",
+                AppSecret = "63ab7a49e991177caf72e3ec8f2247cc",
+                Provider = new FacebookAuthProvider()
+            };
+            app.UseFacebookAuthentication(facebookAuthOptions);
         }
     }
 }

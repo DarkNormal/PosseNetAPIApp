@@ -20,6 +20,7 @@ using System.Net;
 using System.Linq;
 using Microsoft.Owin.Testing;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace PosseNetAPIApp.Controllers
 {
@@ -466,9 +467,66 @@ namespace PosseNetAPIApp.Controllers
             return Request.CreateResponse(HttpStatusCode.OK, model);
         }
 
+
+        //fbtoken is the ACCESS_TOKEN received from Facebook via the Android client
+        [HttpGet]
+        [AllowAnonymous]
+        [Route("VerifyFacebookLogin")]
+        public async Task<IHttpActionResult> FacebookLogin(string fbtoken)
+        {
+
+            //attempts to retrieve information of the user from Facebook API
+            var altverified = await VerifyExternalAccessToken("Facebook", fbtoken);
+            var facebookUser = await VerifyFacebookAccessToken(fbtoken);
+            if (facebookUser != null)
+            {
+                //checks for existing users with the same email
+                var userIdentity = await UserManager.FindByEmailAsync(facebookUser.Email);
+                if (userIdentity != null)
+                {
+                    return Json(new { success = false, cause = "There is an account already associated with this email" });
+                }
+                else
+                {
+                    var user = new ApplicationUser() { UserName = facebookUser.Name, Email = facebookUser.Email };
+
+                    IdentityResult result = await UserManager.CreateAsync(user);
+                    if (!result.Succeeded)
+                    {
+                        return GetErrorResult(result);
+                    }
+                }
+            }
+            return Ok(new { token = fbtoken });
+        }
+        private async Task<FacebookUserViewModel> VerifyFacebookAccessToken(string accessToken)
+        {
+            FacebookUserViewModel fbUser = null;
+            var path = "https://graph.facebook.com/me?fields=id,name,email&access_token=" + accessToken;
+            var client = new HttpClient();
+            var uri = new Uri(path);
+            var response = await client.GetAsync(uri);
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                fbUser = Newtonsoft.Json.JsonConvert.DeserializeObject<FacebookUserViewModel>(content);
+            }
+
+            return fbUser;
+        }
+        public class FacebookUserViewModel
+        {
+            [JsonProperty("id")]
+            public string ID { get; set; }
+            [JsonProperty("name")]
+            public string Name { get; set; }
+            [JsonProperty("email")]
+            public string Email { get; set; }
+        }
+
         // POST api/Account/RegisterExternal
-        [OverrideAuthentication]
-        [HostAuthentication(DefaultAuthenticationTypes.ExternalBearer)]
+
+        [AllowAnonymous]
         [Route("RegisterExternal")]
         public async Task<IHttpActionResult> RegisterExternal(RegisterExternalBindingModel model)
         {
@@ -477,13 +535,28 @@ namespace PosseNetAPIApp.Controllers
                 return BadRequest(ModelState);
             }
 
-            var info = await Authentication.GetExternalLoginInfoAsync();
-            if (info == null)
+            var verifiedAccessToken = await VerifyExternalAccessToken(model.Provider, model.ExternalAccessToken);
+            if (verifiedAccessToken == null)
             {
-                return InternalServerError();
+                return BadRequest("Invalid Provider or External Access Token");
+            }
+            var facebookUser = await VerifyFacebookAccessToken(model.ExternalAccessToken);
+            ApplicationUser user = await UserManager.FindAsync(new UserLoginInfo(model.Provider, verifiedAccessToken.user_id));
+
+            bool hasRegistered = user != null;
+            if (hasRegistered)
+            {
+                //var login = db.UserLogins.Where(x => x.ProviderKey == verifiedAccessToken.user_id).ToList();
+                //if(login != null)
+                //{
+
+                //}
+                 var accessTokenResponseExisting = GenerateLocalAccessTokenResponse(facebookUser.Name);
+
+                return Ok(accessTokenResponseExisting);
             }
 
-            var user = new ApplicationUser() { UserName = model.Email, Email = model.Email };
+            user = new ApplicationUser() { UserName = facebookUser.Name, Email = facebookUser.Email };
 
             IdentityResult result = await UserManager.CreateAsync(user);
             if (!result.Succeeded)
@@ -491,13 +564,153 @@ namespace PosseNetAPIApp.Controllers
                 return GetErrorResult(result);
             }
 
+            var info = new ExternalLoginInfo()
+            {
+                DefaultUserName = facebookUser.Name,
+                Login = new UserLoginInfo(model.Provider, verifiedAccessToken.user_id)
+            };
+
             result = await UserManager.AddLoginAsync(user.Id, info.Login);
             if (!result.Succeeded)
             {
                 return GetErrorResult(result);
             }
-            return Ok();
+
+            //generate access token response
+            var accessTokenResponse = GenerateLocalAccessTokenResponse(facebookUser.Name);
+
+            return Ok(accessTokenResponse);
         }
+
+        [AllowAnonymous]
+        [HttpGet]
+        [Route("ObtainLocalAccessToken")]
+        public async Task<IHttpActionResult> ObtainLocalAccessToken(string provider, string externalAccessToken)
+        {
+
+            if (string.IsNullOrWhiteSpace(provider) || string.IsNullOrWhiteSpace(externalAccessToken))
+            {
+                return BadRequest("Provider or external access token is not sent");
+            }
+
+            var verifiedAccessToken = await VerifyExternalAccessToken(provider, externalAccessToken);
+            if (verifiedAccessToken == null)
+            {
+                return BadRequest("Invalid Provider or External Access Token");
+            }
+
+            IdentityUser user = await UserManager.FindAsync(new UserLoginInfo(provider, verifiedAccessToken.user_id));
+
+            bool hasRegistered = user != null;
+
+            if (!hasRegistered)
+            {
+                return BadRequest("External user is not registered");
+            }
+
+            //generate access token response
+            var accessTokenResponse = GenerateLocalAccessTokenResponse(user.UserName);
+
+            return Ok(accessTokenResponse);
+
+        }
+
+
+
+        private async Task<ParsedExternalAccessToken> VerifyExternalAccessToken(string provider, string accessToken)
+        {
+            ParsedExternalAccessToken parsedToken = null;
+
+            var verifyTokenEndPoint = "";
+
+            if (provider == "Facebook")
+            {
+                //You can get it from here: https://developers.facebook.com/tools/accesstoken/
+                //More about debug_tokn here: http://stackoverflow.com/questions/16641083/how-does-one-get-the-app-access-token-for-debug-token-inspection-on-facebook
+
+                var appToken = "1543886725935090|RAo60r7g3WaYsExBCSEYK6Dm9xU";
+                verifyTokenEndPoint = string.Format("https://graph.facebook.com/debug_token?input_token={0}&access_token={1}", accessToken, appToken);
+            }
+            else if (provider == "Google")
+            {
+                verifyTokenEndPoint = string.Format("https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={0}", accessToken);
+            }
+            else
+            {
+                return null;
+            }
+
+            var client = new HttpClient();
+            var uri = new Uri(verifyTokenEndPoint);
+            var response = await client.GetAsync(uri);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+
+                dynamic jObj = (JObject)Newtonsoft.Json.JsonConvert.DeserializeObject(content);
+
+                parsedToken = new ParsedExternalAccessToken();
+
+                if (provider == "Facebook")
+                {
+                    parsedToken.user_id = jObj["data"]["user_id"];
+                    parsedToken.app_id = jObj["data"]["app_id"];
+
+                    if (!string.Equals(Startup.facebookAuthOptions.AppId, parsedToken.app_id, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return null;
+                    }
+                }
+                else if (provider == "Google")
+                {
+                    //parsedToken.user_id = jObj["user_id"];
+                    //parsedToken.app_id = jObj["audience"];
+
+                    //if (!string.Equals(Startup.googleAuthOptions.ClientId, parsedToken.app_id, StringComparison.OrdinalIgnoreCase))
+                    //{
+                    //    return null;
+                    //}
+
+                }
+
+            }
+
+            return parsedToken;
+        }
+
+        private JObject GenerateLocalAccessTokenResponse(string userName)
+        {
+
+            var tokenExpiration = TimeSpan.FromDays(1);
+
+            ClaimsIdentity identity = new ClaimsIdentity(OAuthDefaults.AuthenticationType);
+
+            identity.AddClaim(new Claim(ClaimTypes.Name, userName));
+            identity.AddClaim(new Claim("role", "user"));
+
+            var props = new AuthenticationProperties()
+            {
+                IssuedUtc = DateTime.UtcNow,
+                ExpiresUtc = DateTime.UtcNow.Add(tokenExpiration),
+            };
+
+            var ticket = new AuthenticationTicket(identity, props);
+
+            var accessToken = Startup.OAuthBearerOptions.AccessTokenFormat.Protect(ticket);
+
+            JObject tokenResponse = new JObject(
+                                        new JProperty("userName", userName),
+                                        new JProperty("access_token", accessToken),
+                                        new JProperty("token_type", "bearer"),
+                                        new JProperty("expires_in", tokenExpiration.TotalSeconds.ToString()),
+                                        new JProperty(".issued", ticket.Properties.IssuedUtc.ToString()),
+                                        new JProperty(".expires", ticket.Properties.ExpiresUtc.ToString())
+        );
+
+            return tokenResponse;
+        }
+
 
         protected override void Dispose(bool disposing)
         {
