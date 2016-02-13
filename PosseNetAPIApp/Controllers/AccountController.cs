@@ -6,7 +6,6 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http;
-using System.Web.Http.ModelBinding;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
@@ -18,7 +17,6 @@ using PosseNetAPIApp.Providers;
 using PosseNetAPIApp.Results;
 using System.Net;
 using System.Linq;
-using Microsoft.Owin.Testing;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -467,38 +465,6 @@ namespace PosseNetAPIApp.Controllers
             return Request.CreateResponse(HttpStatusCode.OK, model);
         }
 
-
-        //fbtoken is the ACCESS_TOKEN received from Facebook via the Android client
-        [HttpGet]
-        [AllowAnonymous]
-        [Route("VerifyFacebookLogin")]
-        public async Task<IHttpActionResult> FacebookLogin(string fbtoken)
-        {
-
-            //attempts to retrieve information of the user from Facebook API
-            var altverified = await VerifyExternalAccessToken("Facebook", fbtoken);
-            var facebookUser = await VerifyFacebookAccessToken(fbtoken);
-            if (facebookUser != null)
-            {
-                //checks for existing users with the same email
-                var userIdentity = await UserManager.FindByEmailAsync(facebookUser.Email);
-                if (userIdentity != null)
-                {
-                    return Json(new { success = false, cause = "There is an account already associated with this email" });
-                }
-                else
-                {
-                    var user = new ApplicationUser() { UserName = facebookUser.Name, Email = facebookUser.Email };
-
-                    IdentityResult result = await UserManager.CreateAsync(user);
-                    if (!result.Succeeded)
-                    {
-                        return GetErrorResult(result);
-                    }
-                }
-            }
-            return Ok(new { token = fbtoken });
-        }
         private async Task<FacebookUserViewModel> VerifyFacebookAccessToken(string accessToken)
         {
             FacebookUserViewModel fbUser = null;
@@ -542,17 +508,16 @@ namespace PosseNetAPIApp.Controllers
             }
             var facebookUser = await VerifyFacebookAccessToken(model.ExternalAccessToken);
             ApplicationUser user = await UserManager.FindAsync(new UserLoginInfo(model.Provider, verifiedAccessToken.user_id));
-
+            var existingUser = await UserManager.FindByEmailAsync(facebookUser.Email);
             bool hasRegistered = user != null;
             if (hasRegistered)
             {
-                //var login = db.UserLogins.Where(x => x.ProviderKey == verifiedAccessToken.user_id).ToList();
-                //if(login != null)
-                //{
-
-                //}
-                 var accessTokenResponseExisting = GenerateLocalAccessTokenResponse(facebookUser.Name);
-
+                
+                if (existingUser != null)
+                {
+                    facebookUser.Name = existingUser.UserName;
+                }
+                var accessTokenResponseExisting = GenerateLocalAccessTokenResponse(facebookUser.Name, facebookUser.Email);
                 return Ok(accessTokenResponseExisting);
             }
 
@@ -561,7 +526,9 @@ namespace PosseNetAPIApp.Controllers
             IdentityResult result = await UserManager.CreateAsync(user);
             if (!result.Succeeded)
             {
-                return GetErrorResult(result);
+                
+                user.Id = existingUser.Id;
+                facebookUser.Name = existingUser.UserName;
             }
 
             var info = new ExternalLoginInfo()
@@ -577,42 +544,9 @@ namespace PosseNetAPIApp.Controllers
             }
 
             //generate access token response
-            var accessTokenResponse = GenerateLocalAccessTokenResponse(facebookUser.Name);
+            var accessTokenResponse = GenerateLocalAccessTokenResponse(facebookUser.Name, facebookUser.Email);
 
             return Ok(accessTokenResponse);
-        }
-
-        [AllowAnonymous]
-        [HttpGet]
-        [Route("ObtainLocalAccessToken")]
-        public async Task<IHttpActionResult> ObtainLocalAccessToken(string provider, string externalAccessToken)
-        {
-
-            if (string.IsNullOrWhiteSpace(provider) || string.IsNullOrWhiteSpace(externalAccessToken))
-            {
-                return BadRequest("Provider or external access token is not sent");
-            }
-
-            var verifiedAccessToken = await VerifyExternalAccessToken(provider, externalAccessToken);
-            if (verifiedAccessToken == null)
-            {
-                return BadRequest("Invalid Provider or External Access Token");
-            }
-
-            IdentityUser user = await UserManager.FindAsync(new UserLoginInfo(provider, verifiedAccessToken.user_id));
-
-            bool hasRegistered = user != null;
-
-            if (!hasRegistered)
-            {
-                return BadRequest("External user is not registered");
-            }
-
-            //generate access token response
-            var accessTokenResponse = GenerateLocalAccessTokenResponse(user.UserName);
-
-            return Ok(accessTokenResponse);
-
         }
 
 
@@ -679,7 +613,7 @@ namespace PosseNetAPIApp.Controllers
             return parsedToken;
         }
 
-        private JObject GenerateLocalAccessTokenResponse(string userName)
+        private JObject GenerateLocalAccessTokenResponse(string userName, string email)
         {
 
             var tokenExpiration = TimeSpan.FromDays(1);
@@ -705,7 +639,8 @@ namespace PosseNetAPIApp.Controllers
                                         new JProperty("token_type", "bearer"),
                                         new JProperty("expires_in", tokenExpiration.TotalSeconds.ToString()),
                                         new JProperty(".issued", ticket.Properties.IssuedUtc.ToString()),
-                                        new JProperty(".expires", ticket.Properties.ExpiresUtc.ToString())
+                                        new JProperty(".expires", ticket.Properties.ExpiresUtc.ToString()),
+                                        new JProperty("email", email)
         );
 
             return tokenResponse;
