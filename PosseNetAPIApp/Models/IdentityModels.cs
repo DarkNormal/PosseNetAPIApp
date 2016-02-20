@@ -24,6 +24,7 @@ namespace PosseNetAPIApp.Models
         public ApplicationDbContext()
             : base("DefaultConnection", throwIfV1Schema: false)
         {
+            //Database.SetInitializer<ApplicationDbContext>(new DropCreateDatabaseAlways<ApplicationDbContext>());
         }
         
         public static ApplicationDbContext Create()
@@ -32,7 +33,6 @@ namespace PosseNetAPIApp.Models
         }
         public IDbSet<IdentityUserLogin> UserLogins { get; set; }
         public DbSet<Event> Events { get; set; }
-        public DbSet<AttendingEvents> AttendingEvents { get; set; }
         public DbSet<FriendRelationships> FriendRelationships { get; set; }
     }
 }

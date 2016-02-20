@@ -11,18 +11,24 @@ namespace PosseNetAPIApp.Models
         public int EventID { get; set; }
         [Required(ErrorMessage = "Event name is required")]
         public string EventTitle { get; set; }
-
         [Required(ErrorMessage = "Event description is required")]
         public string EventDescription { get; set; }
-
         [Required(ErrorMessage = "Event host is required")]
         public string EventHost { get; set; }
-
-        public double EventLocationLat { get; set; }
-        public double EventLocationLng { get; set; }
-
         public DateTime EventStartTime { get; set; }
         public DateTime EventEndTime { get; set; }
+        public Place EventVenue { get; set; }
+        public virtual ICollection<UserBasicDetailsModel> EventAttendees { get; set; }
+
+    }
+    public class Place
+    {
+        public string LocationName { get; set; }
+        public string LocationAddress { get; set; }
+        public double LocationLat { get; set; }
+        public double LocationLng { get; set; }
+        public List<int> LocationType { get; set; }
+        public double LocationRating { get; set; }
 
     }
 }

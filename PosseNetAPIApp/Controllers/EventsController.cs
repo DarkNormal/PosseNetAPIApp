@@ -118,10 +118,7 @@ namespace PosseNetAPIApp.Controllers
         [HttpPost]
         public IHttpActionResult AttendEvent(int id, string username)
         {
-            var eventToAttend = db.Events.Find(id);
-            var user = db.Users.FirstOrDefault(x => x.UserName == username);
-            db.AttendingEvents.Add(new AttendingEvents(user.Id, eventToAttend));
-            db.SaveChanges();
+            //TODO
             return Ok();
         }
     }
