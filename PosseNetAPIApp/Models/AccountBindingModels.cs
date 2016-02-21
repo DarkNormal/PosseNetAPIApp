@@ -96,8 +96,12 @@ namespace PosseNetAPIApp.Models
             ProfilePicture = linkToImage;
         }
         public UserBasicDetailsModel() { }
-        [Required]
+
         [Key]
+        public int Id { get; set; }
+
+        [Required]
+        
         [Display(Name = "username")]
         public string Username { get; set; }
 

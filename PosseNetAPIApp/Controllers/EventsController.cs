@@ -9,11 +9,15 @@ using System.Net.Http;
 using System.Web.Http;
 using System.Web.Http.Description;
 using PosseNetAPIApp.Models;
+using Microsoft.AspNet.Identity.Owin;
+using System.Threading.Tasks;
 
 namespace PosseNetAPIApp.Controllers
 {
     public class EventsController : ApiController
     {
+        private ApplicationUserManager _userManager;
+
         private ApplicationDbContext db = new ApplicationDbContext();
 
         // GET: api/Events
@@ -114,12 +118,60 @@ namespace PosseNetAPIApp.Controllers
         {
             return db.Events.Count(e => e.EventID == id) > 0;
         }
+
+        //Add username to the list of attendees for the event
+        //Checks if the username exists
         [Route("AttendEvent")]
         [HttpPost]
-        public IHttpActionResult AttendEvent(int id, string username)
+        public async Task<IHttpActionResult> AttendEvent(int id, string username)
         {
-            //TODO
-            return Ok();
+            ApplicationUser user = await UserManager.FindByNameAsync(username);
+            if(user != null)
+            {
+                var e = db.Events.Find(id);
+                UserBasicDetailsModel attendee = e.EventAttendees.Where(x => x.Username == username).FirstOrDefault();
+                if(attendee != null)
+                {
+                    return Json(new { success = false, cause = "You are already attending this event" });
+                }
+                else
+                {
+                    
+                    e.EventAttendees.Add(new UserBasicDetailsModel(username, "todo"));
+                    try
+                    {
+                        db.SaveChanges();
+                        return Ok();
+                    }
+                    catch (DbUpdateConcurrencyException)
+                    {
+                        if (!EventExists(id))
+                        {
+                            return NotFound();
+                        }
+                        else
+                        {
+                            throw;
+                        }
+                        
+                    }
+                   
+                }
+            }
+            return BadRequest();
+        }
+
+        public ApplicationUserManager UserManager
+        {
+            get
+            {
+                return _userManager ?? Request.GetOwinContext().GetUserManager<ApplicationUserManager>();
+            }
+            private set
+            {
+                _userManager = value;
+            }
         }
     }
+    
 }
