@@ -26,6 +26,19 @@ namespace PosseNetAPIApp.Controllers
             var list = db.FriendRelationships.Where(x => x.FromUsername == username || x.ToUsername == username).ToList(); //get connections where username is in the From Column
             return list;
         }
+        public IHttpActionResult CheckRelationshipStatus(FriendRelationships rel)
+        {
+            if (ModelState.IsValid)
+            {
+                var existingRelationship = db.FriendRelationships.FirstOrDefault(x => (x.FromUsername.Equals(rel.FromUsername) && x.ToUsername.Equals(rel.ToUsername)) ||
+                       (x.ToUsername.Equals(rel.FromUsername) && x.FromUsername.Equals(rel.ToUsername)));
+                if (existingRelationship != null)
+                {
+                    return Ok();
+                }
+            }
+            return BadRequest();
+        }
 
         // PUT: api/FriendRelationships/5
         [ResponseType(typeof(void))]
