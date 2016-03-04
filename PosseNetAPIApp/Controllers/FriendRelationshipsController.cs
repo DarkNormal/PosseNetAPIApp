@@ -20,12 +20,15 @@ namespace PosseNetAPIApp.Controllers
     {
         private ApplicationDbContext db = new ApplicationDbContext();
 
+        [Route("GetFriends/{username}")]
         public List<FriendRelationships> GetFriendRelationships(string username)
         {
 
             var list = db.FriendRelationships.Where(x => x.FromUsername == username || x.ToUsername == username).ToList(); //get connections where username is in the From Column
             return list;
         }
+        [HttpPost]
+        [Route("Check")]
         public IHttpActionResult CheckRelationshipStatus(FriendRelationships rel)
         {
             if (ModelState.IsValid)
@@ -34,45 +37,10 @@ namespace PosseNetAPIApp.Controllers
                        (x.ToUsername.Equals(rel.FromUsername) && x.FromUsername.Equals(rel.ToUsername)));
                 if (existingRelationship != null)
                 {
-                    return Ok();
+                    return Json(new { success = true, isFriend = true });
                 }
             }
             return BadRequest();
-        }
-
-        // PUT: api/FriendRelationships/5
-        [ResponseType(typeof(void))]
-        public IHttpActionResult PutFriendRelationships(int id, FriendRelationships friendRelationships)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            if (id != friendRelationships.FriendRelationshipsID)
-            {
-                return BadRequest();
-            }
-
-            db.Entry(friendRelationships).State = EntityState.Modified;
-
-            try
-            {
-                db.SaveChanges();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!FriendRelationshipsExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return StatusCode(HttpStatusCode.NoContent);
         }
 
         // POST: api/FriendRelationships
