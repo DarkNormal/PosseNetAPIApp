@@ -77,10 +77,11 @@ namespace PosseNetAPIApp.Controllers
                     {
                         //else add the relationship to the database
                         var friend = new UserBasicDetailsModel();
+                        var altFriend = new UserBasicDetailsModel();
                         friend.Username = checkToUser.UserName;
                         checkFromUser.Following.Add(friend);
-                        friend.Username = checkFromUser.UserName;
-                        checkToUser.Followers.Add(friend);
+                        altFriend.Username = checkFromUser.UserName;
+                        checkToUser.Followers.Add(altFriend);
                         try
                         {
                             db.SaveChanges();
