@@ -19,10 +19,11 @@ using System.Net;
 using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Data.Entity.Infrastructure;
 
 namespace PosseNetAPIApp.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [RoutePrefix("api/Account")]
     public class AccountController : ApiController
     {
@@ -53,37 +54,49 @@ namespace PosseNetAPIApp.Controllers
             }
         }
 
-        //Not pretty code - need to figure out a more elegant way of doing this
-        [AllowAnonymous]
-        [HttpGet]
-        [Route("GetUsersFriendStatus")]
-        public IHttpActionResult GetUsers(string username)
+        // POST: api/FriendRelationships
+        [Route("AddFriend")]
+        public async Task<IHttpActionResult> AddFriend(FriendRelationships friendRelationships)
         {
-            //get friends of the supplied username
-            var friends = new FriendRelationshipsController().GetFriendRelationships(username);
-            //get all users except for the calling user
-            var users = db.Users.Where(x => x.UserName.Equals(username) == false).Select(x => x.UserName).ToList();
-            List<BasicFriendDetails> returnList = new List<BasicFriendDetails>();
-            foreach (string user in users)
+            if (!ModelState.IsValid)
             {
-                //add all users to a list, set IsFriend to false by default
-                returnList.Add(new BasicFriendDetails(user, false));
+                return BadRequest(ModelState);
             }
-            foreach (BasicFriendDetails friend in returnList)
+            else
             {
-                foreach (FriendRelationships addedFriend in friends)
+                //always set accepted to false - confirmation pending from other user
+                friendRelationships.HasAccepted = false;
+
+                //check that the username the request is coming from exists
+                var checkFromUser = db.Users.FirstOrDefault(x => x.UserName == friendRelationships.FromUsername);
+                if (checkFromUser != null)
                 {
-                    //if the name matches, change the IsFriend property to true
-                    if (friend.Username.Equals(addedFriend.ToUsername, StringComparison.OrdinalIgnoreCase) ||
-                        friend.Username.Equals(addedFriend.FromUsername, StringComparison.OrdinalIgnoreCase))
+                    //check that the username the request is for exists
+                    var checkToUser = db.Users.FirstOrDefault(x => x.UserName == friendRelationships.ToUsername);
+                    if (checkToUser != null)
                     {
-                        friend.IsFriend = true;
+                        //else add the relationship to the database
+                        var friend = new UserBasicDetailsModel();
+                        friend.Username = checkToUser.UserName;
+                        checkFromUser.Following.Add(friend);
+                        friend.Username = checkFromUser.UserName;
+                        checkToUser.Followers.Add(friend);
+                        try
+                        {
+                            db.SaveChanges();
+                        }
+                        catch (Exception)
+                        {
+
+                        }
+                        //send a push notification to the requested user's device
+                        await PostNotification("gcm", "friend request", checkFromUser.Email, checkToUser.Email);
+
+                            return Json(new { success = true });
+                        }
                     }
-                }
-
+                    return BadRequest("Incorrect To or From Username");
             }
-
-            return Ok(returnList);
         }
 
 
@@ -143,12 +156,13 @@ namespace PosseNetAPIApp.Controllers
         public UserInfoViewModel GetUserInfo()
         {
             ExternalLoginData externalLogin = ExternalLoginData.FromIdentity(User.Identity as ClaimsIdentity);
-
+            var user = UserManager.FindByName(User.Identity.GetUserName());
             return new UserInfoViewModel
             {
                 Email = User.Identity.GetUserName(),
                 HasRegistered = externalLogin == null,
-                LoginProvider = externalLogin != null ? externalLogin.LoginProvider : null
+                LoginProvider = externalLogin != null ? externalLogin.LoginProvider : null,
+                Friends = user.Following
             };
         }
 
@@ -160,45 +174,7 @@ namespace PosseNetAPIApp.Controllers
             return Ok();
         }
 
-        // GET api/Account/ManageInfo?returnUrl=%2F&generateState=true
-        [Route("ManageInfo")]
-        public async Task<ManageInfoViewModel> GetManageInfo(string returnUrl, bool generateState = false)
-        {
-            IdentityUser user = await UserManager.FindByIdAsync(User.Identity.GetUserId());
 
-            if (user == null)
-            {
-                return null;
-            }
-
-            List<UserLoginInfoViewModel> logins = new List<UserLoginInfoViewModel>();
-
-            foreach (IdentityUserLogin linkedAccount in user.Logins)
-            {
-                logins.Add(new UserLoginInfoViewModel
-                {
-                    LoginProvider = linkedAccount.LoginProvider,
-                    ProviderKey = linkedAccount.ProviderKey
-                });
-            }
-
-            if (user.PasswordHash != null)
-            {
-                logins.Add(new UserLoginInfoViewModel
-                {
-                    LoginProvider = LocalLoginProvider,
-                    ProviderKey = user.UserName,
-                });
-            }
-
-            return new ManageInfoViewModel
-            {
-                LocalLoginProvider = LocalLoginProvider,
-                Email = user.UserName,
-                Logins = logins,
-                ExternalLoginProviders = GetExternalLogins(returnUrl, generateState)
-            };
-        }
         //TODO remove allow anonymous
         [HttpPost]
         [AllowAnonymous]
@@ -740,6 +716,47 @@ namespace PosseNetAPIApp.Controllers
                     UserName = identity.FindFirstValue(ClaimTypes.Name)
                 };
             }
+        }
+        private async Task<HttpResponseMessage> PostNotification(string pns, [FromBody]string message, string from_tag, string to_tag)
+        {
+            var user = from_tag;
+            string[] userTag = new string[2];
+            userTag[0] = "username:" + to_tag;
+            userTag[1] = "from:" + user;
+
+            Microsoft.Azure.NotificationHubs.NotificationOutcome outcome = null;
+            HttpStatusCode ret = HttpStatusCode.InternalServerError;
+
+            switch (pns.ToLower())
+            {
+                //case "wns":
+                //    // Windows 8.1 / Windows Phone 8.1
+                //    var toast = @"<toast><visual><binding template=""ToastText01""><text id=""1"">" +
+                //                "From " + user + ": " + message + "</text></binding></visual></toast>";
+                //    outcome = await Notifications.Instance.Hub.SendWindowsNativeNotificationAsync(toast, userTag);
+                //    break;
+                //case "apns":
+                //    // iOS
+                //    var alert = "{\"aps\":{\"alert\":\"" + "From " + user + ": " + message + "\"}}";
+                //    outcome = await Notifications.Instance.Hub.SendAppleNativeNotificationAsync(alert, userTag);
+                //    break;
+                case "gcm":
+                    // Android
+                    var notif = "{ \"data\" : {\"message\":\"" + "From " + user + ": " + message + "\"}}";
+                    outcome = await Notifications.Instance.Hub.SendGcmNativeNotificationAsync(notif, to_tag);
+                    break;
+            }
+
+            if (outcome != null)
+            {
+                if (!((outcome.State == Microsoft.Azure.NotificationHubs.NotificationOutcomeState.Abandoned) ||
+                    (outcome.State == Microsoft.Azure.NotificationHubs.NotificationOutcomeState.Unknown)))
+                {
+                    ret = HttpStatusCode.OK;
+                }
+            }
+
+            return Request.CreateResponse(ret);
         }
 
         private static class RandomOAuthStateGenerator

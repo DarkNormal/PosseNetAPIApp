@@ -23,6 +23,8 @@ namespace PosseNetAPIApp.Models
         public bool HasRegistered { get; set; }
 
         public string LoginProvider { get; set; }
+
+        public IEnumerable<UserBasicDetailsModel> Friends { get; set; }
     }
 
     public class UserLoginInfoViewModel

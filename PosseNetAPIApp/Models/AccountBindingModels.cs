@@ -100,8 +100,7 @@ namespace PosseNetAPIApp.Models
         [Key]
         public int Id { get; set; }
 
-        [Required]
-        
+        [Required]        
         [Display(Name = "username")]
         public string Username { get; set; }
 

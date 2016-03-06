@@ -4,6 +4,7 @@ using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
 using System.Data.Entity;
+using System.Collections.Generic;
 
 namespace PosseNetAPIApp.Models
 {
@@ -17,6 +18,12 @@ namespace PosseNetAPIApp.Models
             // Add custom user claims here
             return userIdentity;
         }
+        public string Location { get; set; }
+        //holds users that the user is following
+        public virtual ICollection<UserBasicDetailsModel> Following { get; set; }
+        //holds users that are following the user
+        public virtual ICollection<UserBasicDetailsModel> Followers { get; set; }
+
     }
 
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
