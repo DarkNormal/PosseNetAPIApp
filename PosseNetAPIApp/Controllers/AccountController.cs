@@ -69,18 +69,31 @@ namespace PosseNetAPIApp.Controllers
 
                 //check that the username the request is coming from exists
                 var checkFromUser = db.Users.FirstOrDefault(x => x.UserName == friendRelationships.FromUsername);
-                if (checkFromUser != null)
+                var checkToUser = db.Users.FirstOrDefault(x => x.UserName == friendRelationships.ToUsername);
+                if (checkFromUser != null && checkToUser != null)
                 {
-                    //check that the username the request is for exists
-                    var checkToUser = db.Users.FirstOrDefault(x => x.UserName == friendRelationships.ToUsername);
-                    if (checkToUser != null)
+
+                    //else add the relationship to the database
+                    var friend = new UserBasicDetailsModel();
+                    friend.Username = checkToUser.UserName;
+                    var altFriend = new UserBasicDetailsModel();
+                    altFriend.Username = checkFromUser.UserName;
+                    bool existingFollowing = false;
+                    foreach(UserBasicDetailsModel user in checkFromUser.Following)
                     {
-                        //else add the relationship to the database
-                        var friend = new UserBasicDetailsModel();
-                        var altFriend = new UserBasicDetailsModel();
-                        friend.Username = checkToUser.UserName;
+                        if(user.Username == checkToUser.UserName)
+                        {
+                            existingFollowing = true;
+                            break;
+                        }
+                    }
+                    if (existingFollowing == true)
+                    {
+                        return Json(new { success = false, cause = "You are already following " + checkToUser.UserName });
+                    }
+                    else
+                    {
                         checkFromUser.Following.Add(friend);
-                        altFriend.Username = checkFromUser.UserName;
                         checkToUser.Followers.Add(altFriend);
                         try
                         {
@@ -93,12 +106,15 @@ namespace PosseNetAPIApp.Controllers
                         //send a push notification to the requested user's device
                         await PostNotification("gcm", "friend request", checkFromUser.Email, checkToUser.Email);
 
-                            return Json(new { success = true });
-                        }
+                        return Json(new { success = true });
                     }
-                    return BadRequest("Incorrect To or From Username");
+                }
+
+
             }
+            return BadRequest("Incorrect To or From Username");
         }
+
 
 
         //to be used for any validation of users existing, primarily for initial check before /Token to recieve username if email provided
@@ -231,7 +247,7 @@ namespace PosseNetAPIApp.Controllers
                     return Json(new { success = false, cause = "Invalid password provided" });
                 }
 
-                return Json(new { success = true});
+                return Json(new { success = true });
             }
             return Json(new { success = false, cause = "Invalid user / password provided" });
         }
@@ -489,7 +505,7 @@ namespace PosseNetAPIApp.Controllers
             bool hasRegistered = user != null;
             if (hasRegistered)
             {
-                
+
                 if (existingUser != null)
                 {
                     facebookUser.Name = existingUser.UserName;
@@ -503,7 +519,7 @@ namespace PosseNetAPIApp.Controllers
             IdentityResult result = await UserManager.CreateAsync(user);
             if (!result.Succeeded)
             {
-                
+
                 user.Id = existingUser.Id;
                 facebookUser.Name = existingUser.UserName;
             }
