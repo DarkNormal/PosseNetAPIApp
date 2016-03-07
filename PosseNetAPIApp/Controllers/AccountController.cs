@@ -168,18 +168,15 @@ namespace PosseNetAPIApp.Controllers
         public ISecureDataFormat<AuthenticationTicket> AccessTokenFormat { get; private set; }
 
         // GET api/Account/UserInfo
-        [HostAuthentication(DefaultAuthenticationTypes.ExternalBearer)]
-        [Route("UserInfo")]
-        public UserInfoViewModel GetUserInfo()
+        [Route("UserInfo/{username}")]
+        public UserInfoViewModel GetUserInfo(string username)
         {
-            ExternalLoginData externalLogin = ExternalLoginData.FromIdentity(User.Identity as ClaimsIdentity);
-            var user = UserManager.FindByName(User.Identity.GetUserName());
+            var user = db.Users.FirstOrDefault(x => x.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
             return new UserInfoViewModel
             {
-                Email = User.Identity.GetUserName(),
-                HasRegistered = externalLogin == null,
-                LoginProvider = externalLogin != null ? externalLogin.LoginProvider : null,
-                Friends = user.Following
+                Username = user.UserName,
+                Following = user.Following,
+                Followers = user.Followers
             };
         }
 

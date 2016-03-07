@@ -18,13 +18,14 @@ namespace PosseNetAPIApp.Models
 
     public class UserInfoViewModel
     {
-        public string Email { get; set; }
+        public string Username { get; set; }
 
         public bool HasRegistered { get; set; }
 
         public string LoginProvider { get; set; }
 
-        public IEnumerable<UserBasicDetailsModel> Friends { get; set; }
+        public IEnumerable<UserBasicDetailsModel> Followers { get; set; }
+        public IEnumerable<UserBasicDetailsModel> Following { get; set; }
     }
 
     public class UserLoginInfoViewModel
