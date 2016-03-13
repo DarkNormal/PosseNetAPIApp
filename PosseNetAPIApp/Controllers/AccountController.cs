@@ -20,6 +20,8 @@ using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Data.Entity.Infrastructure;
+using SendGrid;
+using System.Net.Mail;
 
 namespace PosseNetAPIApp.Controllers
 {
@@ -105,7 +107,17 @@ namespace PosseNetAPIApp.Controllers
                         }
                         //send a push notification to the requested user's device
                         await PostNotification("gcm", "friend request", checkFromUser.Email, checkToUser.Email);
+                        var myMessage = new SendGridMessage();
+                        myMessage.From = new MailAddress("no-reply@posseup.azurewebsites.net");
+                        myMessage.AddTo(string.Format(@"{0} <{1}>", checkToUser.UserName, checkToUser.Email));
+                        myMessage.Subject = string.Format("{0} is now following you", checkFromUser.UserName);
+                        myMessage.Html = "<p>New Follower</p>";
+                        myMessage.Text = "New Follower plain text!";
+                        var apiKey = System.Environment.GetEnvironmentVariable("SENDGRID_APIKEY");
+                        var transportWeb = new Web(apiKey);
 
+                        // Send the email.
+                        await transportWeb.DeliverAsync(myMessage);
                         return Json(new { success = true });
                     }
                 }
@@ -492,7 +504,15 @@ namespace PosseNetAPIApp.Controllers
             {
                 return Request.CreateResponse(HttpStatusCode.BadRequest, result);
             }
-
+            var myMessage = new SendGridMessage();
+            myMessage.From = new MailAddress("mark@posseup.azurewebsites.net");
+            myMessage.AddTo(string.Format(@"{0} <{1}>", user.UserName, user.Email));
+            myMessage.Subject = "Welcome to Posse Up!";
+            myMessage.Html = "<p>Hello World!</p>";
+            myMessage.Text = "Hello World plain text!";
+            SendEmail(myMessage);
+            // Send the email.
+            
             return Request.CreateResponse(HttpStatusCode.OK, model);
         }
 
@@ -771,6 +791,12 @@ namespace PosseNetAPIApp.Controllers
                     UserName = identity.FindFirstValue(ClaimTypes.Name)
                 };
             }
+        }
+        private async void SendEmail(SendGridMessage message)
+        {
+            var apiKey = Environment.GetEnvironmentVariable("SENDGRID_APIKEY");
+            var transportWeb = new Web(apiKey);
+            await transportWeb.DeliverAsync(message);
         }
         private async Task<HttpResponseMessage> PostNotification(string pns, [FromBody]string message, string from_tag, string to_tag)
         {
