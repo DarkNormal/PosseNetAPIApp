@@ -55,8 +55,8 @@ namespace PosseNetAPIApp.Controllers
         }
 
         // POST: api/FriendRelationships
-        [Route("AddFriend")]
-        public async Task<IHttpActionResult> AddFriend(FriendRelationships friendRelationships)
+        [Route("Follow")]
+        public async Task<IHttpActionResult> Follow(FriendRelationships friendRelationships)
         {
             if (!ModelState.IsValid)
             {
@@ -110,6 +110,47 @@ namespace PosseNetAPIApp.Controllers
                     }
                 }
 
+
+            }
+            return BadRequest("Incorrect To or From Username");
+        }
+        // POST: api/FriendRelationships
+        [Route("Unfollow")]
+        public async Task<IHttpActionResult> Unfollow(FriendRelationships friendRelationships)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            else
+            {
+                friendRelationships.HasAccepted = false;
+                //check that the username the request is coming from exists
+                var checkFromUser = db.Users.FirstOrDefault(x => x.UserName == friendRelationships.FromUsername);
+                var checkToUser = db.Users.FirstOrDefault(x => x.UserName == friendRelationships.ToUsername);
+                if (checkFromUser != null && checkToUser != null)
+                {
+                    var friend = checkFromUser.Following.FirstOrDefault(x => x.Username.Equals(checkToUser.UserName, StringComparison.OrdinalIgnoreCase));
+                    var altFriend = checkToUser.Followers.FirstOrDefault(x => x.Username.Equals(checkFromUser.UserName, StringComparison.OrdinalIgnoreCase));
+                    if(friend != null && altFriend != null)
+                    {
+                        checkFromUser.Following.Remove(friend);
+                        checkToUser.Followers.Remove(altFriend);
+                        try
+                        {
+                            db.SaveChanges();
+                            return Json(new { success = true, cause = "You unfollowed " + checkToUser.UserName });
+                        }
+                        catch (Exception)
+                        {
+
+                        }
+                    }
+                    else
+                    {
+                        return Json(new { success = false, cause = "You are not following " + checkToUser.UserName });
+                    }
+                }
 
             }
             return BadRequest("Incorrect To or From Username");
