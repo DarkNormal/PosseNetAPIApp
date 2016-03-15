@@ -106,7 +106,7 @@ namespace PosseNetAPIApp.Controllers
 
                         }
                         //send a push notification to the requested user's device
-                        await PostNotification("gcm", "friend request", checkFromUser.Email, checkToUser.Email);
+                        await PostNotification("gcm", String.Format("{0} is now following you", checkFromUser.UserName), checkFromUser.Email, checkToUser.Email);
                         var myMessage = new SendGridMessage();
                         myMessage.From = new MailAddress("no-reply@posseup.azurewebsites.net");
                         myMessage.AddTo(string.Format(@"{0} <{1}>", checkToUser.UserName, checkToUser.Email));
@@ -510,7 +510,7 @@ namespace PosseNetAPIApp.Controllers
             myMessage.Subject = "Welcome to Posse Up!";
             myMessage.Html = "<p>Hello World!</p>";
             myMessage.Text = "Hello World plain text!";
-            SendEmail(myMessage);
+            await SendEmail(myMessage);
             // Send the email.
             
             return Request.CreateResponse(HttpStatusCode.OK, model);
@@ -792,7 +792,7 @@ namespace PosseNetAPIApp.Controllers
                 };
             }
         }
-        private async void SendEmail(SendGridMessage message)
+        private async Task SendEmail(SendGridMessage message)
         {
             var apiKey = Environment.GetEnvironmentVariable("SENDGRID_APIKEY");
             var transportWeb = new Web(apiKey);
@@ -823,7 +823,7 @@ namespace PosseNetAPIApp.Controllers
                 //    break;
                 case "gcm":
                     // Android
-                    var notif = "{ \"data\" : {\"message\":\"" + "From " + user + ": " + message + "\"}}";
+                    var notif = "{ \"data\" : {\"message\":\"" + message + "\"}}";
                     outcome = await Notifications.Instance.Hub.SendGcmNativeNotificationAsync(notif, to_tag);
                     break;
             }
