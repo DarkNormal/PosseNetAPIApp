@@ -24,8 +24,8 @@ namespace PosseNetAPIApp.Models
 
         public string LoginProvider { get; set; }
 
-        public IEnumerable<UserBasicDetailsModel> Followers { get; set; }
-        public IEnumerable<UserBasicDetailsModel> Following { get; set; }
+        public ICollection<UserBasicDetailsModel> Followers { get; set; }
+        public ICollection<UserBasicDetailsModel> Following { get; set; }
     }
 
     public class UserLoginInfoViewModel

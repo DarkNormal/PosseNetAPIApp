@@ -20,9 +20,11 @@ namespace PosseNetAPIApp.Models
         }
         public string Location { get; set; }
         //holds users that the user is following
-        public virtual ICollection<UserBasicDetailsModel> Following { get; set; }
+        public virtual ICollection<ApplicationUser> Following { get; set; }
         //holds users that are following the user
-        public virtual ICollection<UserBasicDetailsModel> Followers { get; set; }
+        public virtual ICollection<ApplicationUser> Followers { get; set; }
+
+        public virtual ICollection<Event> Events { get; set; }
 
     }
 

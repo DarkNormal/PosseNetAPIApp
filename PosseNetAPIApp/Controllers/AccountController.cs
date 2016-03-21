@@ -74,16 +74,10 @@ namespace PosseNetAPIApp.Controllers
                 var checkToUser = db.Users.FirstOrDefault(x => x.UserName == friendRelationships.ToUsername);
                 if (checkFromUser != null && checkToUser != null)
                 {
-
-                    //else add the relationship to the database
-                    var friend = new UserBasicDetailsModel();
-                    friend.Username = checkToUser.UserName;
-                    var altFriend = new UserBasicDetailsModel();
-                    altFriend.Username = checkFromUser.UserName;
                     bool existingFollowing = false;
-                    foreach(UserBasicDetailsModel user in checkFromUser.Following)
+                    foreach(ApplicationUser user in checkFromUser.Following)
                     {
-                        if(user.Username == checkToUser.UserName)
+                        if(user.UserName.Equals(checkToUser.UserName, StringComparison.OrdinalIgnoreCase))
                         {
                             existingFollowing = true;
                             break;
@@ -95,8 +89,8 @@ namespace PosseNetAPIApp.Controllers
                     }
                     else
                     {
-                        checkFromUser.Following.Add(friend);
-                        checkToUser.Followers.Add(altFriend);
+                        checkFromUser.Following.Add(checkToUser);
+                        checkToUser.Followers.Add(checkFromUser);
                         try
                         {
                             db.SaveChanges();
@@ -142,8 +136,8 @@ namespace PosseNetAPIApp.Controllers
                 var checkToUser = db.Users.FirstOrDefault(x => x.UserName == friendRelationships.ToUsername);
                 if (checkFromUser != null && checkToUser != null)
                 {
-                    var friend = checkFromUser.Following.FirstOrDefault(x => x.Username.Equals(checkToUser.UserName, StringComparison.OrdinalIgnoreCase));
-                    var altFriend = checkToUser.Followers.FirstOrDefault(x => x.Username.Equals(checkFromUser.UserName, StringComparison.OrdinalIgnoreCase));
+                    var friend = checkFromUser.Following.FirstOrDefault(x => x.UserName.Equals(checkToUser.UserName, StringComparison.OrdinalIgnoreCase));
+                    var altFriend = checkToUser.Followers.FirstOrDefault(x => x.UserName.Equals(checkFromUser.UserName, StringComparison.OrdinalIgnoreCase));
                     if(friend != null && altFriend != null)
                     {
                         checkFromUser.Following.Remove(friend);
@@ -225,11 +219,21 @@ namespace PosseNetAPIApp.Controllers
         public UserInfoViewModel GetUserInfo(string username)
         {
             var user = db.Users.FirstOrDefault(x => x.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
+            List<UserBasicDetailsModel> following = new List<UserBasicDetailsModel>();
+            foreach(ApplicationUser u in user.Following)
+            {
+                following.Add(new UserBasicDetailsModel(u.UserName));
+            }
+            List<UserBasicDetailsModel> followers = new List<UserBasicDetailsModel>();
+            foreach (ApplicationUser u in user.Followers)
+            {
+                followers.Add(new UserBasicDetailsModel(u.UserName));
+            }
             return new UserInfoViewModel
             {
                 Username = user.UserName,
-                Following = user.Following,
-                Followers = user.Followers
+                Following = following,
+                Followers = followers
             };
         }
 
