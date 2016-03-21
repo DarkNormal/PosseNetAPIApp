@@ -138,6 +138,8 @@ namespace PosseNetAPIApp.Controllers
                 {
                     
                     e.EventAttendees.Add(new UserBasicDetailsModel(username, "todo"));
+                    db.Users.First(x => x.Id == user.Id).Events.Add(e);
+
                     try
                     {
                         db.SaveChanges();

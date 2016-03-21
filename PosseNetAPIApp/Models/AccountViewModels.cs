@@ -26,6 +26,7 @@ namespace PosseNetAPIApp.Models
 
         public ICollection<UserBasicDetailsModel> Followers { get; set; }
         public ICollection<UserBasicDetailsModel> Following { get; set; }
+        public ICollection<Event> Events { get; set; }
     }
 
     public class UserLoginInfoViewModel

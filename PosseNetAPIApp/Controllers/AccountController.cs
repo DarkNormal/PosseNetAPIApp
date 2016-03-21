@@ -233,7 +233,8 @@ namespace PosseNetAPIApp.Controllers
             {
                 Username = user.UserName,
                 Following = following,
-                Followers = followers
+                Followers = followers,
+                Events = user.Events
             };
         }
 
