@@ -144,7 +144,7 @@ namespace PosseNetAPIApp.Controllers
                     try
                     {
                         db.SaveChanges();
-                        return Ok();
+                        return Json(new { success = true });
                     }
                     catch (DbUpdateConcurrencyException)
                     {
@@ -172,7 +172,7 @@ namespace PosseNetAPIApp.Controllers
             if (user != null)
             {
                 var e = db.Events.Find(id);
-                UserBasicDetailsModel attendee = e.EventAttendees.Where(x => x.Username == username).FirstOrDefault();
+                UserBasicDetailsModel attendee = e.EventAttendees.Where(x => x.Username.Equals(username, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                 if (attendee != null)
                 {
                     e.EventAttendees.Remove(attendee);
@@ -180,7 +180,7 @@ namespace PosseNetAPIApp.Controllers
                     try
                     {
                         db.SaveChanges();
-                        return Ok();
+                        return Json(new { success = true});
                     }
                     catch (DbUpdateConcurrencyException)
                     {
