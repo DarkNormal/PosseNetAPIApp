@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 
 namespace PosseNetAPIApp.Controllers
 {
+    [RoutePrefix("api/Event")]
     public class EventsController : ApiController
     {
         private ApplicationUserManager _userManager;
@@ -121,7 +122,7 @@ namespace PosseNetAPIApp.Controllers
 
         //Add username to the list of attendees for the event
         //Checks if the username exists
-        [Route("AttendEvent")]
+        [Route("Attend/{id}")]
         [HttpPost]
         public async Task<IHttpActionResult> AttendEvent(int id, string username)
         {
@@ -129,7 +130,7 @@ namespace PosseNetAPIApp.Controllers
             if(user != null)
             {
                 var e = db.Events.Find(id);
-                UserBasicDetailsModel attendee = e.EventAttendees.Where(x => x.Username == username).FirstOrDefault();
+                UserBasicDetailsModel attendee = e.EventAttendees.Where(x => x.Username.Equals(username,StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                 if(attendee != null)
                 {
                     return Json(new { success = false, cause = "You are already attending this event" });
@@ -158,6 +159,47 @@ namespace PosseNetAPIApp.Controllers
                         
                     }
                    
+                }
+            }
+            return BadRequest();
+        }
+
+        [Route("Leave/{id}")]
+        [HttpPost]
+        public async Task<IHttpActionResult> LeaveEvent(int id, string username)
+        {
+            ApplicationUser user = await UserManager.FindByNameAsync(username);
+            if (user != null)
+            {
+                var e = db.Events.Find(id);
+                UserBasicDetailsModel attendee = e.EventAttendees.Where(x => x.Username == username).FirstOrDefault();
+                if (attendee != null)
+                {
+                    e.EventAttendees.Remove(attendee);
+                    db.Users.First(x => x.Id == user.Id).Events.Remove(e);
+                    try
+                    {
+                        db.SaveChanges();
+                        return Ok();
+                    }
+                    catch (DbUpdateConcurrencyException)
+                    {
+                        if (!EventExists(id))
+                        {
+                            return NotFound();
+                        }
+                        else
+                        {
+                            throw;
+                        }
+
+                    }
+                    
+                }
+                else
+                {
+                    return Json(new { success = false, cause = "You are not attending this event" });
+
                 }
             }
             return BadRequest();
