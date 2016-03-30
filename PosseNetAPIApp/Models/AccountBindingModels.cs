@@ -52,6 +52,9 @@ namespace PosseNetAPIApp.Models
         [Required]
         [Display(Name = "Username")]
         public string Username { get; set; }
+
+        [Display(Name = "ProfileImage")]
+        public string profileImage { get; set;}
     }
 
     public class RemoveLoginBindingModel

@@ -22,6 +22,10 @@ using Newtonsoft.Json.Linq;
 using System.Data.Entity.Infrastructure;
 using SendGrid;
 using System.Net.Mail;
+using Microsoft.WindowsAzure;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Blob;
 
 namespace PosseNetAPIApp.Controllers
 {
@@ -30,6 +34,7 @@ namespace PosseNetAPIApp.Controllers
     public class AccountController : ApiController
     {
         private const string LocalLoginProvider = "Local";
+        private CloudBlockBlob blockBlob;
         private ApplicationUserManager _userManager;
         private ApplicationDbContext db = new ApplicationDbContext();
 
@@ -517,8 +522,35 @@ namespace PosseNetAPIApp.Controllers
             myMessage.Text = "Hello World plain text!";
             await SendEmail(myMessage);
             // Send the email.
-            
+            if (model.profileImage != null)
+            {
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(CloudConfigurationManager.GetSetting("StorageConnectionString"));
+                CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
+                // Retrieve reference to a previously created container.
+                CloudBlobContainer container = blobClient.GetContainerReference("profile-pictures");
+
+                //Create the "images" container if it doesn't already exist.
+                container.CreateIfNotExists();
+
+                // Retrieve reference to a blob with this name
+                blockBlob = container.GetBlockBlobReference("profile_image_" + Guid.NewGuid());
+
+                byte[] imageBytes = Convert.FromBase64String(model.profileImage);
+
+                // create or overwrite the blob named "image_" and the current date and time 
+                blockBlob.UploadFromByteArray(imageBytes, 0, imageBytes.Length);
+
+                model.profileImage = getImageURL();
+            }
+            else
+            {
+                model.profileImage = "https://cdn2.iconfinder.com/data/icons/ui-1/60/05-512.png";
+            }
             return Request.CreateResponse(HttpStatusCode.OK, model);
+        }
+        public string getImageURL()
+        {
+            return blockBlob.StorageUri.PrimaryUri.AbsoluteUri;
         }
 
         private async Task<FacebookUserViewModel> VerifyFacebookAccessToken(string accessToken)
