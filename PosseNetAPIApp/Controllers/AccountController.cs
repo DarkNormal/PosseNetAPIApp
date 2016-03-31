@@ -190,7 +190,7 @@ namespace PosseNetAPIApp.Controllers
                     if (passwordCheck)
                     {
                         model.Username = user.UserName;                                         //if password also matches, set the model username (in this case its an email) to the associated username
-                        return Request.CreateResponse(HttpStatusCode.OK, model);                //return the model back to the client (with username)
+                        return Request.CreateResponse(HttpStatusCode.OK, new UserBasicDetailsModel(model.Username, model.Password, user.ProfileImageURL));                //return the model back to the client (with username)
                     }
                     else
                     {
@@ -208,7 +208,7 @@ namespace PosseNetAPIApp.Controllers
                 var checkUser = await UserManager.FindAsync(model.Username, model.Password);    //finds users based on username and password
                 if (checkUser != null)
                 {
-                    return Request.CreateResponse(HttpStatusCode.OK, model);                    //found user, return model as it satisfies the requirements
+                    return Request.CreateResponse(HttpStatusCode.OK, new UserBasicDetailsModel(checkUser.UserName, model.Password, checkUser.ProfileImageURL));                    //found user, return model as it satisfies the requirements
                 }
                 else
                 {
@@ -552,7 +552,7 @@ namespace PosseNetAPIApp.Controllers
            
             return Request.CreateResponse(HttpStatusCode.OK, model);
         }
-        public string getImageURL()
+        private string getImageURL()
         {
             return blockBlob.StorageUri.PrimaryUri.AbsoluteUri;
         }

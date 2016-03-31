@@ -98,6 +98,12 @@ namespace PosseNetAPIApp.Models
             Username = username;
             ProfilePicture = linkToImage;
         }
+        public UserBasicDetailsModel(string username,string password, string linkToImage)
+        {
+            Username = username;
+            Password = password;
+            ProfilePicture = linkToImage;
+        }
         public UserBasicDetailsModel(string username)
         {
             Username = username;
@@ -114,6 +120,8 @@ namespace PosseNetAPIApp.Models
 
         [Display(Name = "profile picture")]
         public string ProfilePicture { get; set; }
+
+        public string Password { get; set; }
     }
 
 }

@@ -18,6 +18,8 @@ namespace PosseNetAPIApp.Models
         public DateTime EventStartTime { get; set; }
         public DateTime EventEndTime { get; set; }
         public Place EventVenue { get; set; }
+
+        public String EventImage { get; set; }
         public virtual ICollection<UserBasicDetailsModel> EventAttendees { get; set; }
 
     }

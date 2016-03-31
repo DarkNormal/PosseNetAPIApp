@@ -11,6 +11,9 @@ using System.Web.Http.Description;
 using PosseNetAPIApp.Models;
 using Microsoft.AspNet.Identity.Owin;
 using System.Threading.Tasks;
+using System.Configuration;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Blob;
 
 namespace PosseNetAPIApp.Controllers
 {
@@ -18,6 +21,7 @@ namespace PosseNetAPIApp.Controllers
     public class EventsController : ApiController
     {
         private ApplicationUserManager _userManager;
+        private CloudBlockBlob blockBlob;
 
         private ApplicationDbContext db = new ApplicationDbContext();
 
@@ -83,11 +87,41 @@ namespace PosseNetAPIApp.Controllers
             {
                 return BadRequest(ModelState);
             }
+            if (@event.EventImage != null)
+            {
+                string storageString = ConfigurationManager.ConnectionStrings["StorageConnectionString"].ToString();
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(storageString);
+                CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
+                // Retrieve reference to a previously created container.
+                CloudBlobContainer container = blobClient.GetContainerReference("profile-pictures");
+
+                //Create the "images" container if it doesn't already exist.
+                container.CreateIfNotExists();
+
+                // Retrieve reference to a blob with this name
+                blockBlob = container.GetBlockBlobReference("event_image_" + Guid.NewGuid());
+
+                byte[] imageBytes = Convert.FromBase64String(@event.EventImage);
+
+                // create or overwrite the blob named "image_" and the current date and time 
+                blockBlob.UploadFromByteArray(imageBytes, 0, imageBytes.Length);
+
+                @event.EventImage= getImageURL();
+            }
+            else
+            {
+                @event.EventImage= "https://posseup.blob.core.windows.net/profile-pictures/05-512.png";
+            }
 
             db.Events.Add(@event);
             db.SaveChanges();
 
             return CreatedAtRoute("DefaultApi", new { id = @event.EventID }, @event);
+        }
+
+        private string getImageURL()
+        {
+            return blockBlob.StorageUri.PrimaryUri.AbsoluteUri;
         }
 
         // DELETE: api/Events/5
