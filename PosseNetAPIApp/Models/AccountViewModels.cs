@@ -20,6 +20,8 @@ namespace PosseNetAPIApp.Models
     {
         public string Username { get; set; }
 
+        public string ProfileImageURL { get; set; }
+
         public bool HasRegistered { get; set; }
 
         public string LoginProvider { get; set; }

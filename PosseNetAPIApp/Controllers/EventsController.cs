@@ -138,7 +138,7 @@ namespace PosseNetAPIApp.Controllers
                 else
                 {
                     
-                    e.EventAttendees.Add(new UserBasicDetailsModel(username, "todo"));
+                    e.EventAttendees.Add(new UserBasicDetailsModel(username, user.ProfileImageURL));
                     db.Users.First(x => x.Id == user.Id).Events.Add(e);
 
                     try

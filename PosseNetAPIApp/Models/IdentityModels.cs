@@ -26,6 +26,8 @@ namespace PosseNetAPIApp.Models
 
         public virtual ICollection<Event> Events { get; set; }
 
+        public string ProfileImageURL { get; set; }
+
     }
 
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>

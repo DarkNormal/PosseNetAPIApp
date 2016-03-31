@@ -228,16 +228,17 @@ namespace PosseNetAPIApp.Controllers
             List<UserBasicDetailsModel> following = new List<UserBasicDetailsModel>();
             foreach(ApplicationUser u in user.Following)
             {
-                following.Add(new UserBasicDetailsModel(u.UserName));
+                following.Add(new UserBasicDetailsModel(u.UserName, u.ProfileImageURL));
             }
             List<UserBasicDetailsModel> followers = new List<UserBasicDetailsModel>();
             foreach (ApplicationUser u in user.Followers)
             {
-                followers.Add(new UserBasicDetailsModel(u.UserName));
+                followers.Add(new UserBasicDetailsModel(u.UserName, u.ProfileImageURL));
             }
             return new UserInfoViewModel
             {
                 Username = user.UserName,
+                ProfileImageURL = user.ProfileImageURL,
                 Following = following,
                 Followers = followers,
                 Events = user.Events
@@ -506,23 +507,6 @@ namespace PosseNetAPIApp.Controllers
             {
                 return Request.CreateResponse(HttpStatusCode.BadRequest, ModelState);
             }
-
-            var user = new ApplicationUser() { UserName = model.Username, Email = model.Email };
-
-            IdentityResult result = await UserManager.CreateAsync(user, model.Password);
-
-            if (!result.Succeeded)
-            {
-                return Request.CreateResponse(HttpStatusCode.BadRequest, result);
-            }
-            var myMessage = new SendGridMessage();
-            myMessage.From = new MailAddress("mark@posseup.azurewebsites.net");
-            myMessage.AddTo(string.Format(@"{0} <{1}>", user.UserName, user.Email));
-            myMessage.Subject = "Welcome to Posse Up!";
-            myMessage.Html = "<p>Hello World!</p>";
-            myMessage.Text = "Hello World plain text!";
-            await SendEmail(myMessage);
-            // Send the email.
             if (model.profileImage != null)
             {
                 string storageString = ConfigurationManager.ConnectionStrings["StorageConnectionString"].ToString();
@@ -546,8 +530,26 @@ namespace PosseNetAPIApp.Controllers
             }
             else
             {
-                model.profileImage = "https://cdn2.iconfinder.com/data/icons/ui-1/60/05-512.png";
+                model.profileImage = "https://posseup.blob.core.windows.net/profile-pictures/05-512.png";
             }
+
+            var user = new ApplicationUser() { UserName = model.Username, Email = model.Email, ProfileImageURL = model.profileImage };
+
+            IdentityResult result = await UserManager.CreateAsync(user, model.Password);
+
+            if (!result.Succeeded)
+            {
+                return Request.CreateResponse(HttpStatusCode.BadRequest, result);
+            }
+            var myMessage = new SendGridMessage();
+            myMessage.From = new MailAddress("mark@posseup.azurewebsites.net");
+            myMessage.AddTo(string.Format(@"{0} <{1}>", user.UserName, user.Email));
+            myMessage.Subject = "Welcome to Posse Up!";
+            myMessage.Html = "<p>Hello World!</p>";
+            myMessage.Text = "Hello World plain text!";
+            await SendEmail(myMessage);
+            // Send the email.
+           
             return Request.CreateResponse(HttpStatusCode.OK, model);
         }
         public string getImageURL()
