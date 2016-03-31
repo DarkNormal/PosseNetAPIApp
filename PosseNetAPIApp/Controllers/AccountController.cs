@@ -26,6 +26,7 @@ using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Blob;
+using System.Configuration;
 
 namespace PosseNetAPIApp.Controllers
 {
@@ -524,7 +525,8 @@ namespace PosseNetAPIApp.Controllers
             // Send the email.
             if (model.profileImage != null)
             {
-                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(CloudConfigurationManager.GetSetting("StorageConnectionString"));
+                string storageString = ConfigurationManager.ConnectionStrings["StorageConnectionString"].ToString();
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(storageString);
                 CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
                 // Retrieve reference to a previously created container.
                 CloudBlobContainer container = blobClient.GetContainerReference("profile-pictures");
