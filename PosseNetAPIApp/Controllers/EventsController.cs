@@ -81,7 +81,7 @@ namespace PosseNetAPIApp.Controllers
 
         // POST: api/Events
         [ResponseType(typeof(Event))]
-        public IHttpActionResult PostEvent(Event @event)
+        public async Task<IHttpActionResult> PostEvent(Event @event)
         {
             if (!ModelState.IsValid)
             {
@@ -106,12 +106,18 @@ namespace PosseNetAPIApp.Controllers
                 // create or overwrite the blob named "image_" and the current date and time 
                 blockBlob.UploadFromByteArray(imageBytes, 0, imageBytes.Length);
 
-                @event.EventImage= getImageURL();
+                @event.EventImage = getImageURL();
             }
             else
             {
-                @event.EventImage= "https://posseup.blob.core.windows.net/profile-pictures/05-512.png";
+                @event.EventImage = "https://posseup.blob.core.windows.net/profile-pictures/event_image_ab089d5f-0b47-4b56-a8c5-8b2e6ce71e70";
             }
+            if (@event.EventVenue == null)
+            {
+                @event.EventVenue = new Place();
+            }
+            ApplicationUser host = await UserManager.FindByEmailAsync(@event.EventHost);
+            @event.EventAttendees.Add(new UserBasicDetailsModel(host.UserName));
 
             db.Events.Add(@event);
             db.SaveChanges();

@@ -17,14 +17,19 @@ namespace PosseNetAPIApp.Models
         public string EventHost { get; set; }
         public DateTime EventStartTime { get; set; }
         public DateTime EventEndTime { get; set; }
+        public bool EventAllDay { get; set; }
+        //determines who can see the events
+        public string EventVisibility { get; set; }
+
         public Place EventVenue { get; set; }
 
-        public String EventImage { get; set; }
+        public string EventImage { get; set; }
         public virtual ICollection<UserBasicDetailsModel> EventAttendees { get; set; }
 
     }
     public class Place
     {
+        public Place() { }
         public string LocationName { get; set; }
         public string LocationAddress { get; set; }
         public double LocationLat { get; set; }
