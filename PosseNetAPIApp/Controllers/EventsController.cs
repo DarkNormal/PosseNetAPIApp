@@ -81,13 +81,13 @@ namespace PosseNetAPIApp.Controllers
 
         // POST: api/Events
         [ResponseType(typeof(Event))]
-        public async Task<IHttpActionResult> PostEvent(Event @event)
+        public async Task<IHttpActionResult> PostEvent(Event newEvent)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-            if (@event.EventImage != null)
+            if (newEvent.EventImage != null)
             {
                 string storageString = ConfigurationManager.ConnectionStrings["StorageConnectionString"].ToString();
                 CloudStorageAccount storageAccount = CloudStorageAccount.Parse(storageString);
@@ -101,28 +101,24 @@ namespace PosseNetAPIApp.Controllers
                 // Retrieve reference to a blob with this name
                 blockBlob = container.GetBlockBlobReference("event_image_" + Guid.NewGuid());
 
-                byte[] imageBytes = Convert.FromBase64String(@event.EventImage);
+                byte[] imageBytes = Convert.FromBase64String(newEvent.EventImage);
 
                 // create or overwrite the blob named "image_" and the current date and time 
                 blockBlob.UploadFromByteArray(imageBytes, 0, imageBytes.Length);
 
-                @event.EventImage = getImageURL();
+                newEvent.EventImage = getImageURL();
             }
             else
             {
-                @event.EventImage = "https://posseup.blob.core.windows.net/profile-pictures/event_image_ab089d5f-0b47-4b56-a8c5-8b2e6ce71e70";
+                newEvent.EventImage = "https://posseup.blob.core.windows.net/profile-pictures/event_image_ab089d5f-0b47-4b56-a8c5-8b2e6ce71e70";
             }
-            if (@event.EventVenue == null)
+            if (newEvent.EventVenue == null)
             {
-                @event.EventVenue = new Place();
+                newEvent.EventVenue = new Place();
             }
-            ApplicationUser host = await UserManager.FindByEmailAsync(@event.EventHost);
-            @event.EventAttendees.Add(new UserBasicDetailsModel(host.UserName));
-
-            db.Events.Add(@event);
+            db.Events.Add(newEvent);
             db.SaveChanges();
-
-            return CreatedAtRoute("DefaultApi", new { id = @event.EventID }, @event);
+            return CreatedAtRoute("DefaultApi", new { id = newEvent.EventID }, newEvent);
         }
 
         private string getImageURL()
