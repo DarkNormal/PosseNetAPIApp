@@ -262,7 +262,7 @@ namespace PosseNetAPIApp.Controllers
         {
             if (ModelState.IsValid)
             {
-                var existingUsername = db.Users.Where(x => x.UserName.Equals(model.Username, StringComparison.OrdinalIgnoreCase)).ToList(); //finds any users with existing username
+                var existingUsername = db.Users.Where(x => x.UserName.Equals(model.UserName, StringComparison.OrdinalIgnoreCase)).ToList(); //finds any users with existing username
                 if (existingUsername.Count < 1) //the chosen username doesn't exist
                 {
                     var u = UserManager.FindByEmail(model.Email);       //finds the user details based on email
@@ -271,7 +271,7 @@ namespace PosseNetAPIApp.Controllers
                         bool passwordCheck = await UserManager.CheckPasswordAsync(u, model.Password);   //check the password is correct to the user
                         if (passwordCheck)
                         {
-                            u.UserName = model.Username;
+                            u.UserName = model.UserName;
                             UserManager.Update(u);
                             return Json(new { success = true });
                         }
@@ -507,7 +507,7 @@ namespace PosseNetAPIApp.Controllers
             {
                 return Request.CreateResponse(HttpStatusCode.BadRequest, ModelState);
             }
-            if (model.profileImage != null)
+            if (model.ProfileImageURL != null)
             {
                 string storageString = ConfigurationManager.ConnectionStrings["StorageConnectionString"].ToString();
                 CloudStorageAccount storageAccount = CloudStorageAccount.Parse(storageString);
@@ -521,19 +521,19 @@ namespace PosseNetAPIApp.Controllers
                 // Retrieve reference to a blob with this name
                 blockBlob = container.GetBlockBlobReference("profile_image_" + Guid.NewGuid());
 
-                byte[] imageBytes = Convert.FromBase64String(model.profileImage);
+                byte[] imageBytes = Convert.FromBase64String(model.ProfileImageURL);
 
                 // create or overwrite the blob named "image_" and the current date and time 
                 blockBlob.UploadFromByteArray(imageBytes, 0, imageBytes.Length);
 
-                model.profileImage = getImageURL();
+                model.ProfileImageURL = getImageURL();
             }
             else
             {
-                model.profileImage = "https://posseup.blob.core.windows.net/profile-pictures/05-512.png";
+                model.ProfileImageURL = "https://posseup.blob.core.windows.net/profile-pictures/05-512.png";
             }
 
-            var user = new ApplicationUser() { UserName = model.Username, Email = model.Email, ProfileImageURL = model.profileImage };
+            var user = new ApplicationUser() { UserName = model.UserName, Email = model.Email, ProfileImageURL = model.ProfileImageURL };
 
             IdentityResult result = await UserManager.CreateAsync(user, model.Password);
 
