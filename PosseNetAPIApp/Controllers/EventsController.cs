@@ -160,13 +160,13 @@ namespace PosseNetAPIApp.Controllers
         //Checks if the username exists
         [Route("Attend/{id}")]
         [HttpPost]
-        public async Task<IHttpActionResult> AttendEvent(int id, string username)
+        public  IHttpActionResult AttendEvent(int id, string username)
         {
-            ApplicationUser user = await UserManager.FindByNameAsync(username);
+            ApplicationUser user = db.Users.FirstOrDefault(x => x.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
             if(user != null)
             {
                 var e = db.Events.Find(id);
-                UserBasicDetailsModel attendee = e.EventAttendees.Where(x => x.Username.Equals(username,StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                ApplicationUser attendee = e.EventAttendees.Where(x => x.UserName.Equals(username,StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                 if(attendee != null)
                 {
                     return Json(new { success = false, cause = "You are already attending this event" });
@@ -174,7 +174,7 @@ namespace PosseNetAPIApp.Controllers
                 else
                 {
                     
-                    e.EventAttendees.Add(new UserBasicDetailsModel(username, user.ProfileImageURL));
+                    e.EventAttendees.Add(user);
                     db.Users.First(x => x.Id == user.Id).Events.Add(e);
 
                     try
@@ -208,7 +208,7 @@ namespace PosseNetAPIApp.Controllers
             if (user != null)
             {
                 var e = db.Events.Find(id);
-                UserBasicDetailsModel attendee = e.EventAttendees.Where(x => x.Username.Equals(username, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                ApplicationUser attendee = e.EventAttendees.Where(x => x.UserName.Equals(username, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                 if (attendee != null)
                 {
                     e.EventAttendees.Remove(attendee);

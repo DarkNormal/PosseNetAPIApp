@@ -24,7 +24,7 @@ namespace PosseNetAPIApp.Models
         public Place EventVenue { get; set; }
 
         public string EventImage { get; set; }
-        public virtual ICollection<UserBasicDetailsModel> EventAttendees { get; set; }
+        public virtual ICollection<ApplicationUser> EventAttendees { get; set; }
 
     }
     public class Place
