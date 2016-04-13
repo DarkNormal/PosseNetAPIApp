@@ -157,10 +157,14 @@ namespace PosseNetAPIApp.Controllers
         }
         [Route("{id}/ConfirmGuests")]
         [HttpPost]
-        public IHttpActionResult ConfirmAttendance(int id, string[] usernames)
+        public IHttpActionResult ConfirmAttendance(int id, ConfirmedAttendees confirmed)
         {
-                var e = db.Events.Find(id);
-            foreach(string u in usernames) {
+            var e = db.Events.Find(id);
+            if(e == null)
+            {
+                return BadRequest();
+            }
+            foreach(string u in confirmed.Usernames) {
                 ApplicationUser attendee = e.ConfirmedGuests.Where(x => x.UserName.Equals(u, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                 if(attendee == null)
                 {
@@ -169,7 +173,6 @@ namespace PosseNetAPIApp.Controllers
                     try
                     {
                         db.SaveChanges();
-                        return Json(new { success = true });
                     }
                     catch (DbUpdateConcurrencyException)
                     {
@@ -185,7 +188,12 @@ namespace PosseNetAPIApp.Controllers
                     }
                 }
             }
-            return BadRequest();
+            return Ok();
+        }
+        public class ConfirmedAttendees
+        {
+            public string[] Usernames { get; set; }
+            public string IsthisHere { get; set; }
         }
 
         //Add username to the list of attendees for the event
