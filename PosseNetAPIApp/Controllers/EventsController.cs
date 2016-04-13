@@ -14,6 +14,8 @@ using System.Threading.Tasks;
 using System.Configuration;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
+using SendGrid;
+using System.Net.Mail;
 
 namespace PosseNetAPIApp.Controllers
 {
@@ -157,22 +159,35 @@ namespace PosseNetAPIApp.Controllers
         }
         [Route("{id}/ConfirmGuests")]
         [HttpPost]
-        public IHttpActionResult ConfirmAttendance(int id, ConfirmedAttendees confirmed)
+        public async Task<IHttpActionResult> ConfirmAttendance(int id, ConfirmedAttendees confirmed)
         {
             var e = db.Events.Find(id);
-            if(e == null)
+            if (e == null)
             {
                 return BadRequest();
             }
-            foreach(string u in confirmed.Usernames) {
+            foreach (string u in confirmed.Usernames)
+            {
                 ApplicationUser attendee = e.ConfirmedGuests.Where(x => x.UserName.Equals(u, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
-                if(attendee == null)
+                if (attendee == null)
                 {
-
-                    e.ConfirmedGuests.Add(db.Users.FirstOrDefault(x => x.UserName.Equals(u, StringComparison.OrdinalIgnoreCase)));
+                    ApplicationUser user = db.Users.FirstOrDefault(x => x.UserName.Equals(u, StringComparison.OrdinalIgnoreCase));
+                    e.ConfirmedGuests.Add(user);
                     try
                     {
                         db.SaveChanges();
+                        var myMessage = new SendGridMessage();
+                        myMessage.From = new MailAddress("no-reply@posseup.azurewebsites.net");
+                        myMessage.AddTo(string.Format(@"{0} <{1}>", user.UserName, user.Email));
+                        myMessage.Subject = string.Format("Attendance confirmation for {0}", e.EventTitle);
+                        myMessage.Html = String.Format("<p>You have just been confirmed as attending by the host of {0}</p>", e.EventTitle);
+                        myMessage.Text = String.Format("You have just been confirmed as attending by the host of {0}", e.EventTitle);
+                        var apiKey = System.Environment.GetEnvironmentVariable("SENDGRID_APIKEY");
+                        var transportWeb = new Web(apiKey);
+
+                        // Send the email.
+                        await transportWeb.DeliverAsync(myMessage);
+                        await PostNotification("gcm", String.Format("You have been confirmed as attending for {0}", e.EventTitle), user.Email);
                     }
                     catch (DbUpdateConcurrencyException)
                     {
@@ -188,7 +203,7 @@ namespace PosseNetAPIApp.Controllers
                     }
                 }
             }
-            return Ok();
+            return Json(new { success = true });
         }
         public class ConfirmedAttendees
         {
@@ -292,6 +307,46 @@ namespace PosseNetAPIApp.Controllers
                 _userManager = value;
             }
         }
+
+        private async Task<HttpResponseMessage> PostNotification(string pns, [FromBody]string message, string to_tag)
+        {
+
+            Microsoft.Azure.NotificationHubs.NotificationOutcome outcome = null;
+            HttpStatusCode ret = HttpStatusCode.InternalServerError;
+
+            switch (pns.ToLower())
+            {
+                //case "wns":
+                //    // Windows 8.1 / Windows Phone 8.1
+                //    var toast = @"<toast><visual><binding template=""ToastText01""><text id=""1"">" +
+                //                "From " + user + ": " + message + "</text></binding></visual></toast>";
+                //    outcome = await Notifications.Instance.Hub.SendWindowsNativeNotificationAsync(toast, userTag);
+                //    break;
+                //case "apns":
+                //    // iOS
+                //    var alert = "{\"aps\":{\"alert\":\"" + "From " + user + ": " + message + "\"}}";
+                //    outcome = await Notifications.Instance.Hub.SendAppleNativeNotificationAsync(alert, userTag);
+                //    break;
+                case "gcm":
+                    // Android
+                    var notif = "{ \"data\" : {\"message\":\"" + message + "\"}}";
+                    outcome = await Notifications.Instance.Hub.SendGcmNativeNotificationAsync(notif, to_tag);
+                    break;
+            }
+
+            if (outcome != null)
+            {
+                if (!((outcome.State == Microsoft.Azure.NotificationHubs.NotificationOutcomeState.Abandoned) ||
+                    (outcome.State == Microsoft.Azure.NotificationHubs.NotificationOutcomeState.Unknown)))
+                {
+                    ret = HttpStatusCode.OK;
+                }
+            }
+
+            return Request.CreateResponse(ret);
+        }
+
     }
     
+
 }
