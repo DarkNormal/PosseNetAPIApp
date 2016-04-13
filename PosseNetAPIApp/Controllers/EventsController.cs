@@ -155,6 +155,38 @@ namespace PosseNetAPIApp.Controllers
         {
             return db.Events.Count(e => e.EventID == id) > 0;
         }
+        [Route("{id}/ConfirmGuests")]
+        [HttpPost]
+        public IHttpActionResult ConfirmAttendance(int id, string[] usernames)
+        {
+                var e = db.Events.Find(id);
+            foreach(string u in usernames) {
+                ApplicationUser attendee = e.ConfirmedGuests.Where(x => x.UserName.Equals(u, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                if(attendee == null)
+                {
+
+                    e.ConfirmedGuests.Add(db.Users.FirstOrDefault(x => x.UserName.Equals(u, StringComparison.OrdinalIgnoreCase)));
+                    try
+                    {
+                        db.SaveChanges();
+                        return Json(new { success = true });
+                    }
+                    catch (DbUpdateConcurrencyException)
+                    {
+                        if (!EventExists(id))
+                        {
+                            return NotFound();
+                        }
+                        else
+                        {
+                            throw;
+                        }
+
+                    }
+                }
+            }
+            return BadRequest();
+        }
 
         //Add username to the list of attendees for the event
         //Checks if the username exists
@@ -163,7 +195,7 @@ namespace PosseNetAPIApp.Controllers
         public  IHttpActionResult AttendEvent(int id, string username)
         {
             ApplicationUser user = db.Users.FirstOrDefault(x => x.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
-            if(user != null)
+            if (user != null)
             {
                 var e = db.Events.Find(id);
                 ApplicationUser attendee = e.EventAttendees.Where(x => x.UserName.Equals(username,StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
