@@ -128,7 +128,7 @@ namespace PosseNetAPIApp.Controllers
         }
         // POST: api/FriendRelationships
         [Route("Unfollow")]
-        public async Task<IHttpActionResult> Unfollow(FriendRelationships friendRelationships)
+        public IHttpActionResult Unfollow(FriendRelationships friendRelationships)
         {
             if (!ModelState.IsValid)
             {
@@ -144,7 +144,7 @@ namespace PosseNetAPIApp.Controllers
                 {
                     var friend = checkFromUser.Following.FirstOrDefault(x => x.UserName.Equals(checkToUser.UserName, StringComparison.OrdinalIgnoreCase));
                     var altFriend = checkToUser.Followers.FirstOrDefault(x => x.UserName.Equals(checkFromUser.UserName, StringComparison.OrdinalIgnoreCase));
-                    if(friend != null && altFriend != null)
+                    if (friend != null && altFriend != null)
                     {
                         checkFromUser.Following.Remove(friend);
                         checkToUser.Followers.Remove(altFriend);

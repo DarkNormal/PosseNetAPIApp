@@ -148,12 +148,14 @@ namespace PosseNetAPIApp.Controllers
             return blockBlob.StorageUri.PrimaryUri.AbsoluteUri;
         }
 
-        public async Task<IHttpActionResult> InviteFollowers(int id, string[] followersToInvite)
+        [HttpPost]
+        [Route("Invite/{id}")]
+        public async Task<IHttpActionResult> InviteFollowers(int id, ConfirmedAttendees usersToInvite)
         {
             var e = db.Events.Find(id);
             if (e != null)
             {
-                foreach (string username in followersToInvite)
+                foreach (string username in usersToInvite.Usernames)
                 {
                     var validUser = db.Users.Where(x => x.UserName.Equals(username, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                     if (validUser != null)
