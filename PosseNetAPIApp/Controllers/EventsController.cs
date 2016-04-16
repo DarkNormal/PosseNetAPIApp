@@ -133,7 +133,7 @@ namespace PosseNetAPIApp.Controllers
                 if(legitUser != null)
                 {
                     validUsers.Add(legitUser);
-                    inviteNotifications(newEvent, legitUser);
+                    await inviteNotifications(newEvent, legitUser);
                 }
             }
             newEvent.EventInvitedGuests.Clear();
@@ -148,20 +148,20 @@ namespace PosseNetAPIApp.Controllers
             return blockBlob.StorageUri.PrimaryUri.AbsoluteUri;
         }
 
-        public IHttpActionResult InviteFollowers(int id, string[] followersToInvite)
+        public async Task<IHttpActionResult> InviteFollowers(int id, string[] followersToInvite)
         {
             var e = db.Events.Find(id);
-            if(e != null)
+            if (e != null)
             {
-                foreach(string username in followersToInvite)
+                foreach (string username in followersToInvite)
                 {
                     var validUser = db.Users.Where(x => x.UserName.Equals(username, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
-                    if(validUser != null)
+                    if (validUser != null)
                     {
                         if (!e.EventInvitedGuests.Contains(validUser))
                         {
                             e.EventInvitedGuests.Add(validUser);
-                            inviteNotifications(e, validUser);
+                            await inviteNotifications(e, validUser);
                         }
                     }
                 }
@@ -169,7 +169,7 @@ namespace PosseNetAPIApp.Controllers
             }
             return Ok();
         }
-        private async void inviteNotifications(Event e, ApplicationUser user)
+        private async Task<IHttpActionResult> inviteNotifications(Event e, ApplicationUser user)
         {
             var hostuser = await UserManager.FindByEmailAsync(e.EventHost);
             var myMessage = new SendGridMessage();
@@ -182,6 +182,8 @@ namespace PosseNetAPIApp.Controllers
             var transportWeb = new Web(apiKey);
             await PostNotification("gcm", "You've been invited to " + e.EventTitle + " by " + hostuser.UserName, user.Email);
             await transportWeb.DeliverAsync(myMessage);
+
+            return Ok();
 
 
         }
