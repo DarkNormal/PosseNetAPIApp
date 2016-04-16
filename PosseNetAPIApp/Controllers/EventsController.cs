@@ -133,11 +133,7 @@ namespace PosseNetAPIApp.Controllers
                 if(legitUser != null)
                 {
                     validUsers.Add(legitUser);
-                    await PostNotification("gcm", "You've been invited to " + newEvent.EventTitle + " by " + hostuser.UserName, legitUser.Email);
-                    
-                    myMessage.AddTo(string.Format(@"{0} <{1}>", legitUser.UserName, legitUser.Email));
-                    // Send the email.
-                    await transportWeb.DeliverAsync(myMessage);
+                    inviteNotifications(newEvent, legitUser);
                 }
             }
             newEvent.EventInvitedGuests.Clear();
@@ -150,6 +146,44 @@ namespace PosseNetAPIApp.Controllers
         private string getImageURL()
         {
             return blockBlob.StorageUri.PrimaryUri.AbsoluteUri;
+        }
+
+        public IHttpActionResult InviteFollowers(int id, string[] followersToInvite)
+        {
+            var e = db.Events.Find(id);
+            if(e != null)
+            {
+                foreach(string username in followersToInvite)
+                {
+                    var validUser = db.Users.Where(x => x.UserName.Equals(username, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                    if(validUser != null)
+                    {
+                        if (!e.EventInvitedGuests.Contains(validUser))
+                        {
+                            e.EventInvitedGuests.Add(validUser);
+                            inviteNotifications(e, validUser);
+                        }
+                    }
+                }
+                db.SaveChanges();
+            }
+            return Ok();
+        }
+        private async void inviteNotifications(Event e, ApplicationUser user)
+        {
+            var hostuser = await UserManager.FindByEmailAsync(e.EventHost);
+            var myMessage = new SendGridMessage();
+            myMessage.From = new MailAddress("no-reply@posseup.azurewebsites.net");
+            myMessage.Subject = string.Format("You're invited!");
+            myMessage.Html = String.Format("<p>You're invited to attend {0}</p>", e.EventTitle);
+            myMessage.Text = String.Format("You're invited to attend {0}", e.EventTitle);
+            myMessage.AddTo(string.Format(@"{0} <{1}>", user.UserName, user.Email));
+            var apiKey = System.Environment.GetEnvironmentVariable("SENDGRID_APIKEY");
+            var transportWeb = new Web(apiKey);
+            await PostNotification("gcm", "You've been invited to " + e.EventTitle + " by " + hostuser.UserName, user.Email);
+            await transportWeb.DeliverAsync(myMessage);
+
+
         }
 
         // DELETE: api/Events/5
@@ -232,7 +266,6 @@ namespace PosseNetAPIApp.Controllers
         public class ConfirmedAttendees
         {
             public string[] Usernames { get; set; }
-            public string IsthisHere { get; set; }
         }
 
         //Add username to the list of attendees for the event
