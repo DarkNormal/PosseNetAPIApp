@@ -118,6 +118,17 @@ namespace PosseNetAPIApp.Controllers
             {
                 newEvent.EventVenue = new Place();
             }
+            var validUsers = new List<ApplicationUser>();
+            foreach(ApplicationUser user in newEvent.EventInvitedGuests)
+            {
+                var legitUser = db.Users.Where(x => x.UserName.Equals(user.UserName, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                if(legitUser != null)
+                {
+                    validUsers.Add(legitUser);
+                }
+            }
+            newEvent.EventInvitedGuests.Clear();
+            newEvent.EventInvitedGuests = validUsers;
             db.Events.Add(newEvent);
             db.SaveChanges();
             return CreatedAtRoute("DefaultApi", new { id = newEvent.EventID }, newEvent);
