@@ -28,9 +28,35 @@ namespace PosseNetAPIApp.Controllers
         private ApplicationDbContext db = new ApplicationDbContext();
 
         // GET: api/Events
+        [Route("All/Public")]
+        [HttpGet]
         public IEnumerable<Event> GetEvents()
         {
-            return db.Events.ToList();
+            return db.Events.Where(e => e.EventVisibility.Equals("Public")).ToList();
+        }
+
+        [Route("All/Public/{username}/Invite")]
+        [HttpGet]
+        public IEnumerable<Event> GetAllUserEvents(string username)
+        {
+            var user = db.Users.FirstOrDefault(x => x.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
+            if (user != null)
+            {
+                List<Event> returnEvents = GetEvents().ToList();
+                var events = db.Events.Where(e => e.EventVisibility.Equals("Private")).ToList();
+                foreach(Event e in events)
+                {
+                    if (e.EventInvitedGuests.Contains(user))
+                    {
+                        returnEvents.Add(e);
+                    }
+                }
+                return returnEvents;
+            }
+            else
+            {
+                return GetEvents();
+            }
         }
 
         // GET: api/Events/5
@@ -119,14 +145,6 @@ namespace PosseNetAPIApp.Controllers
                 newEvent.EventVenue = new Place();
             }
             var validUsers = new List<ApplicationUser>();
-            var hostuser = await UserManager.FindByEmailAsync(newEvent.EventHost);
-            var myMessage = new SendGridMessage();
-            myMessage.From = new MailAddress("no-reply@posseup.azurewebsites.net");
-            myMessage.Subject = string.Format("You're invited!");
-            myMessage.Html = String.Format("<p>You're invited to attend {0}</p>", newEvent.EventTitle);
-            myMessage.Text = String.Format("You're invited to attend {0}", newEvent.EventTitle);
-            var apiKey = System.Environment.GetEnvironmentVariable("SENDGRID_APIKEY");
-            var transportWeb = new Web(apiKey);
             foreach (ApplicationUser user in newEvent.EventInvitedGuests)
             {
                 var legitUser = db.Users.Where(x => x.UserName.Equals(user.UserName, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
