@@ -23,6 +23,8 @@ namespace PosseNetAPIApp.Models
         [Required]
         public string ExternalAccessToken { get; set; }
 
+        public string Name { get; set; }
+
     }
 
     public class ParsedExternalAccessToken

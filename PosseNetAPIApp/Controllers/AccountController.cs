@@ -612,15 +612,17 @@ namespace PosseNetAPIApp.Controllers
                 var accessTokenResponseExisting = GenerateLocalAccessTokenResponse(facebookUser.Name, facebookUser.Email);
                 return Ok(accessTokenResponseExisting);
             }
-
+            if(model.Name != null)
+            {
+                facebookUser.Name = model.Name;
+            }
             user = new ApplicationUser() { UserName = facebookUser.Name, Email = facebookUser.Email };
 
             IdentityResult result = await UserManager.CreateAsync(user);
             if (!result.Succeeded)
             {
 
-                user.Id = existingUser.Id;
-                facebookUser.Name = existingUser.UserName;
+                return BadRequest(result.Errors.First());
             }
 
             var info = new ExternalLoginInfo()
