@@ -27,8 +27,8 @@ namespace PosseNetAPIApp.Models
 
 
         public virtual ICollection<ApplicationUser> EventAttendees { get; set; }
-        public virtual ICollection<ApplicationUser> EventInvitedGuests { get; set; }
-        public virtual ICollection<ApplicationUser> ConfirmedGuests { get; set; }
+        public virtual ICollection<InvitedUser> EventInvitedGuests { get; set; }
+        public virtual ICollection<ConfirmedUser> ConfirmedGuests { get; set; }
 
     }
     public class Place
@@ -41,5 +41,17 @@ namespace PosseNetAPIApp.Models
         public List<int> LocationType { get; set; }
         public double LocationRating { get; set; }
 
+    }
+    public class InvitedUser
+    {
+        public virtual ApplicationUser User { get; set; }
+        [Key]
+        public Guid InvitedUserId { get; set; }
+    }
+    public class ConfirmedUser
+    {
+        public virtual ApplicationUser User { get; set; }
+        [Key]
+        public Guid ConfirmedUserId { get; set; }
     }
 }

@@ -49,9 +49,9 @@ namespace PosseNetAPIApp.Controllers
             {
                 List<Event> returnEvents = GetEvents().ToList();
                 var events = db.Events.Where(e => e.EventVisibility.Equals("Private")).ToList();
-                foreach(Event e in events)
+                foreach (Event e in events)
                 {
-                    if (e.EventInvitedGuests.Contains(user) || e.EventHost.Equals(user.Email, StringComparison.OrdinalIgnoreCase))
+                    if (e.EventInvitedGuests.Where(x => x.User == user).FirstOrDefault() != null || e.EventHost.Equals(user.Email, StringComparison.OrdinalIgnoreCase))
                     {
                         returnEvents.Add(e);
                     }
@@ -149,15 +149,15 @@ namespace PosseNetAPIApp.Controllers
             {
                 newEvent.EventVenue = new Place();
             }
-            var validUsers = new List<ApplicationUser>();
+            var validUsers = new List<InvitedUser>();
             if (newEvent.EventInvitedGuests != null)
             {
-                foreach (ApplicationUser user in newEvent.EventInvitedGuests)
+                foreach (InvitedUser user in newEvent.EventInvitedGuests)
                 {
-                    var legitUser = db.Users.Where(x => x.UserName.Equals(user.UserName, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                    var legitUser = db.Users.Where(x => x.UserName.Equals(user.User.UserName, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                     if (legitUser != null)
                     {
-                        validUsers.Add(legitUser);
+                        validUsers.Add(new InvitedUser() { User = legitUser, InvitedUserId = Guid.NewGuid()});
                         await inviteNotifications(newEvent, legitUser);
                     }
                 }
@@ -186,14 +186,15 @@ namespace PosseNetAPIApp.Controllers
                     var validUser = db.Users.Where(x => x.UserName.Equals(username, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                     if (validUser != null)
                     {
-                        if (!e.EventInvitedGuests.Contains(validUser))
+                        if (e.EventInvitedGuests.Where(x => x.User == validUser).FirstOrDefault() == null)
                         {
-                            e.EventInvitedGuests.Add(validUser);
+                            e.EventInvitedGuests.Add(new InvitedUser() { User = validUser, InvitedUserId = Guid.NewGuid()});
+                            db.SaveChanges();
                             await inviteNotifications(e, validUser);
                         }
                     }
                 }
-                db.SaveChanges();
+                
             }
             return Ok();
         }
@@ -256,11 +257,11 @@ namespace PosseNetAPIApp.Controllers
             }
             foreach (string u in confirmed.Usernames)
             {
-                ApplicationUser attendee = e.ConfirmedGuests.Where(x => x.UserName.Equals(u, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                ApplicationUser attendee = e.ConfirmedGuests.Where(x => x.User.UserName.Equals(u, StringComparison.OrdinalIgnoreCase)).FirstOrDefault().User;
                 if (attendee == null)
                 {
                     ApplicationUser user = db.Users.FirstOrDefault(x => x.UserName.Equals(u, StringComparison.OrdinalIgnoreCase));
-                    e.ConfirmedGuests.Add(user);
+                    e.ConfirmedGuests.Add(new ConfirmedUser() { User = user, ConfirmedUserId = Guid.NewGuid()});
                     try
                     {
                         db.SaveChanges();
