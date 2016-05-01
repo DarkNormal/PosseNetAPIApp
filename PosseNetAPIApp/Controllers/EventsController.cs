@@ -20,12 +20,17 @@ using System.Net.Mail;
 namespace PosseNetAPIApp.Controllers
 {
     [RoutePrefix("api/Event")]
+    [Authorize]
     public class EventsController : ApiController
     {
         private ApplicationUserManager _userManager;
         private CloudBlockBlob blockBlob;
 
         private ApplicationDbContext db = new ApplicationDbContext();
+        public EventsController()
+        {
+
+        }
 
         // GET: api/Events
         [Route("All/Public")]
@@ -46,7 +51,7 @@ namespace PosseNetAPIApp.Controllers
                 var events = db.Events.Where(e => e.EventVisibility.Equals("Private")).ToList();
                 foreach(Event e in events)
                 {
-                    if (e.EventInvitedGuests.Contains(user))
+                    if (e.EventInvitedGuests.Contains(user) || e.EventHost.Equals(user.Email, StringComparison.OrdinalIgnoreCase))
                     {
                         returnEvents.Add(e);
                     }
@@ -145,17 +150,20 @@ namespace PosseNetAPIApp.Controllers
                 newEvent.EventVenue = new Place();
             }
             var validUsers = new List<ApplicationUser>();
-            foreach (ApplicationUser user in newEvent.EventInvitedGuests)
+            if (newEvent.EventInvitedGuests != null)
             {
-                var legitUser = db.Users.Where(x => x.UserName.Equals(user.UserName, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
-                if(legitUser != null)
+                foreach (ApplicationUser user in newEvent.EventInvitedGuests)
                 {
-                    validUsers.Add(legitUser);
-                    await inviteNotifications(newEvent, legitUser);
+                    var legitUser = db.Users.Where(x => x.UserName.Equals(user.UserName, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                    if (legitUser != null)
+                    {
+                        validUsers.Add(legitUser);
+                        await inviteNotifications(newEvent, legitUser);
+                    }
                 }
+                newEvent.EventInvitedGuests.Clear();
+                newEvent.EventInvitedGuests = validUsers;
             }
-            newEvent.EventInvitedGuests.Clear();
-            newEvent.EventInvitedGuests = validUsers;
             db.Events.Add(newEvent);
             db.SaveChanges();
             return CreatedAtRoute("DefaultApi", new { id = newEvent.EventID }, newEvent);
@@ -300,17 +308,10 @@ namespace PosseNetAPIApp.Controllers
             if (user != null)
             {
                 var e = db.Events.Find(id);
-                ApplicationUser attendee = e.EventAttendees.Where(x => x.UserName.Equals(username,StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
-                if(attendee != null)
+                if(db.Events.Find(id).EventAttendees.Where(x => x.UserName.Equals(username, StringComparison.OrdinalIgnoreCase)).FirstOrDefault() == null)
                 {
-                    return Json(new { success = false, cause = "You are already attending this event" });
-                }
-                else
-                {
-                    
                     e.EventAttendees.Add(user);
-                    db.Users.First(x => x.Id == user.Id).Events.Add(e);
-
+                   user.Events.Add(e);
                     try
                     {
                         db.SaveChanges();
@@ -326,9 +327,8 @@ namespace PosseNetAPIApp.Controllers
                         {
                             throw;
                         }
-                        
+
                     }
-                   
                 }
             }
             return BadRequest();
