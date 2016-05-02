@@ -599,16 +599,12 @@ namespace PosseNetAPIApp.Controllers
                 return BadRequest("Invalid Provider or External Access Token");
             }
             var facebookUser = await VerifyFacebookAccessToken(model.ExternalAccessToken);
-            ApplicationUser user = await UserManager.FindAsync(new UserLoginInfo(model.Provider, verifiedAccessToken.user_id));
+            var fbUser = new UserLoginInfo(model.Provider, verifiedAccessToken.user_id);
+            ApplicationUser user =  UserManager.Find(fbUser);
             var existingUser = await UserManager.FindByEmailAsync(facebookUser.Email);
-            bool hasRegistered = user != null;
-            if (hasRegistered)
+            if (user != null || existingUser != null)
             {
-
-                if (existingUser != null)
-                {
-                    facebookUser.Name = existingUser.UserName;
-                }
+                facebookUser.Name = existingUser.UserName;
                 var accessTokenResponseExisting = GenerateLocalAccessTokenResponse(facebookUser.Name, facebookUser.Email);
                 return Ok(accessTokenResponseExisting);
             }

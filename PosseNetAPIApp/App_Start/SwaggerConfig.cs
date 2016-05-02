@@ -167,8 +167,8 @@ namespace PosseNetAPIApp
                         //
                         //c.CustomProvider((defaultProvider) => new CachingSwaggerProvider(defaultProvider));
                     })
-                .EnableSwaggerUi(c =>
-                    {
+                //.EnableSwaggerUi(c =>
+                //    {
                         // Use the "InjectStylesheet" option to enrich the UI with one or more additional CSS stylesheets.
                         // The file must be included in your project as an "Embedded Resource", and then the resource's
                         // "Logical Name" is passed to the method as shown below.
@@ -218,7 +218,7 @@ namespace PosseNetAPIApp
                         // the Swagger 2.0 specification, you can enable UI support as shown below.
                         //
                         //c.EnableOAuth2Support("test-client-id", "test-realm", "Swagger UI");
-                    });
+                    ;
         }
     }
 }
