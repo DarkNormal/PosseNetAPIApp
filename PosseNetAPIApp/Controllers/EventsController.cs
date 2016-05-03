@@ -257,7 +257,15 @@ namespace PosseNetAPIApp.Controllers
             }
             foreach (string u in confirmed.Usernames)
             {
-                ApplicationUser attendee = e.ConfirmedGuests.Where(x => x.User.UserName.Equals(u, StringComparison.OrdinalIgnoreCase)).FirstOrDefault().User;
+                ApplicationUser attendee = null;
+                if (e.ConfirmedGuests.Count > 0)
+                {
+                    ConfirmedUser  alreadyConfirmed = e.ConfirmedGuests.Where(x => x.User.UserName.Equals(u, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                    if(alreadyConfirmed != null)
+                    {
+                        attendee = alreadyConfirmed.User;
+                    }
+                }
                 if (attendee == null)
                 {
                     ApplicationUser user = db.Users.FirstOrDefault(x => x.UserName.Equals(u, StringComparison.OrdinalIgnoreCase));
